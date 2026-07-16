@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>小桃酥的成长记录</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 /* ===== RESET ===== */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -928,7 +927,7 @@ function renderGrowth(){
   $('#btn-add-gr')?.addEventListener('click',showGrForm);
   $$('.btn-del-gr').forEach(b=>{b.addEventListener('click',(e)=>{e.stopPropagation();confirm('确定删除？',async()=>{await API.deleteGrowth(b.dataset.id);toast('已删除','ok');reloadData().then(()=>renderPage());});});});
 
-  if(records.length>0)setTimeout(()=>{renderCharts(records,birth);},200);
+  // Charts loaded dynamically by loadChartJS wrapper
 }
 
 function stile(icon,label,value,unit,ds){return'<div class="stat-tile"><div style="font-size:1.5rem;margin-bottom:4px">'+icon+'</div><div class="stat-val">'+(value!=='--'?value:'--')+'<span class="u">'+(value!=='--'?unit:'')+'</span></div><div class="stat-lbl">'+label+'</div>'+(ds?'<div class="stat-lbl" style="color:#81C784">'+ds+'</div>':'')+'</div>';}
@@ -1087,6 +1086,34 @@ function editSetting(field){
 //  HELPERS
 // ============================================================
 function emptyState(icon,title,desc){return'<div class="empty"><div class="empty-icon">'+icon+'</div><div class="empty-title">'+title+'</div><div class="empty-desc">'+desc+'</div></div>';}
+
+// ---- Chart.js dynamic loader ----
+let _chartJSLoaded=false,_chartJSLoading=false;
+function loadChartJS(){
+  if(_chartJSLoaded)return Promise.resolve();
+  if(_chartJSLoading)return new Promise((ok)=>{const t=setInterval(()=>{if(_chartJSLoaded){clearInterval(t);ok();}},100);});
+  _chartJSLoading=true;
+  return new Promise((ok,no)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+    s.onload=()=>{_chartJSLoaded=true;_chartJSLoading=false;ok();};
+    s.onerror=()=>{_chartJSLoading=false;no(new Error('Chart.js load failed'));};
+    document.head.appendChild(s);
+  });
+}
+
+// Wrap renderCharts to load Chart.js first
+const _origRenderGrowth=renderGrowth;
+renderGrowth=function(){
+  _origRenderGrowth();
+  if(appData.growthRecords.length>0){
+    loadChartJS().then(()=>{
+      const records=[...appData.growthRecords].sort((a,b)=>a.date.localeCompare(b.date));
+      records.forEach(r=>{r.ageInDays=U.age(appData.settings.birthDate,r.date).totalDays;});
+      renderCharts(records,appData.settings.birthDate);
+    }).catch(()=>{$('#page-growth').insertAdjacentHTML('beforeend','<p style="text-align:center;color:#BCAAA4;margin-top:16px">📊 图表加载失败，请检查网络（数据记录正常）</p>');});
+  }
+};
 </script>
 </body>
 </html>
