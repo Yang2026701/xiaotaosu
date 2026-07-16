@@ -418,10 +418,10 @@ const API = {
   updateConfig(u) { return this._fetch('PATCH','/rest/v1/app_config?id=eq.1',u); },
   getPhotos() { return this._fetch('GET','/rest/v1/photos?select=*&order=photo_date.desc').then(d=>(d||[]).map(this._mapPhoto.bind(this))); },
   _mapPhoto(r) {
-    return{id:r.id,title:r.title||'',description:r.description||'',date:r.photo_date,isVideo:!!r.is_video,dataUrl:r.storage_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.storage_path:'',thumbnailDataUrl:r.thumb_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.thumb_path:r.storage_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.storage_path:'',tags:r.tags||[],favorite:r.favorite||false,originalSize:r.original_size||0};
+    return{id:r.id,title:r.title||'',description:r.description||'',date:r.photo_date,time:r.photo_time||'',isVideo:!!r.is_video,dataUrl:r.storage_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.storage_path:'',thumbnailDataUrl:r.thumb_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.thumb_path:r.storage_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.storage_path:'',tags:r.tags||[],favorite:r.favorite||false,originalSize:r.original_size||0};
   },
-  addPhoto(p) { return this._fetch('POST','/rest/v1/photos',{id:p.id,title:p.title,description:p.description,photo_date:p.date,storage_path:p._sp,thumb_path:p._tp,tags:p.tags,favorite:p.favorite,original_size:p.originalSize,is_video:!!p.isVideo}); },
-  updatePhoto(id,u) { const r={};if(u.favorite!==undefined)r.favorite=u.favorite;if(u.title!==undefined)r.title=u.title;if(u.description!==undefined)r.description=u.description;if(u.date!==undefined)r.photo_date=u.date;if(u.tags!==undefined)r.tags=u.tags;return this._fetch('PATCH','/rest/v1/photos?id=eq.'+encodeURIComponent(id),r); },
+  addPhoto(p) { return this._fetch('POST','/rest/v1/photos',{id:p.id,title:p.title,description:p.description,photo_date:p.date,photo_time:p.time||'',storage_path:p._sp,thumb_path:p._tp,tags:p.tags,favorite:p.favorite,original_size:p.originalSize,is_video:!!p.isVideo}); },
+  updatePhoto(id,u) { const r={};if(u.favorite!==undefined)r.favorite=u.favorite;if(u.title!==undefined)r.title=u.title;if(u.description!==undefined)r.description=u.description;if(u.date!==undefined)r.photo_date=u.date;if(u.time!==undefined)r.photo_time=u.time;if(u.tags!==undefined)r.tags=u.tags;return this._fetch('PATCH','/rest/v1/photos?id=eq.'+encodeURIComponent(id),r); },
   async deletePhoto(id) {
     try{const d=await this._fetch('GET','/rest/v1/photos?id=eq.'+encodeURIComponent(id)+'&select=storage_path,thumb_path');if(d&&d[0]){const ps=[d[0].storage_path];if(d[0].thumb_path)ps.push(d[0].thumb_path);await fetch(CFG.SUPABASE_URL+'/storage/v1/object/'+CFG.BUCKET+'?'+ps.map(p=>'paths='+encodeURIComponent(p)).join('&'),{method:'DELETE',headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}}).catch(()=>{});}}catch(e){}
     return this._fetch('DELETE','/rest/v1/photos?id=eq.'+encodeURIComponent(id));
@@ -1106,16 +1106,16 @@ function showPhotoForm(pid,pp,tp,isVideo) {
     ? '<div style="position:relative;display:inline-block"><img src="'+previewUrl+'" style="border-radius:12px;max-height:200px" alt="预览"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:1.25rem;color:#fff">▶</div></div>'
     : '<div style="text-align:center;margin-bottom:16px"><img src="'+previewUrl+'" style="border-radius:12px;max-height:200px" alt="预览"></div>';
   const html=previewHtml+
-    '<div class="fg"><label class="fl">日期</label><input type="date" class="fi" id="ap-date" value="'+U.today()+'"></div>'+
     '<div class="fg"><label class="fl">标题</label><input type="text" class="fi" id="ap-title" placeholder="给照片取个名字"></div>'+
+    '<div class="fr"><div class="fg"><label class="fl">日期</label><input type="date" class="fi" id="ap-date" value="'+U.today()+'"></div><div class="fg"><label class="fl">时间</label><input type="time" class="fi" id="ap-time"></div></div>'+
     '<div class="fg"><label class="fl">描述</label><textarea class="ft" id="ap-desc" rows="2" placeholder="照片背后的故事..."></textarea></div>'+
     '<div class="fg"><label class="fl">标签（逗号分隔）</label><input type="text" class="fi" id="ap-tags" placeholder="例如: 满月, 笑脸, 家庭"></div>';
   showModal('添加照片',html,async()=>{
-    const date=$('#ap-date').value,title=$('#ap-title').value.trim(),desc=$('#ap-desc').value.trim(),tagsStr=$('#ap-tags').value.trim();
+    const date=$('#ap-date').value,time=$('#ap-time').value,title=$('#ap-title').value.trim(),desc=$('#ap-desc').value.trim(),tagsStr=$('#ap-tags').value.trim();
     if(!date){toast('请选择日期','err');return false;}
     const tags=tagsStr?tagsStr.split(/[,，]/).map(t=>t.trim()).filter(Boolean):[];
     try{
-      await API.addPhoto({id:pid,title,description:desc,date,tags,favorite:false,originalSize:0,_sp:pp,_tp:tp,isVideo:!!isVideo});
+      await API.addPhoto({id:pid,title,description:desc,date,time,tags,favorite:false,originalSize:0,_sp:pp,_tp:tp,isVideo:!!isVideo});
       toast(isVideo?'视频已添加！':'照片已添加！','ok');celebrate();return true;
     }catch(e){toast('保存失败: '+e.message,'err');return false;}
   });
@@ -1124,16 +1124,16 @@ function showPhotoForm(pid,pp,tp,isVideo) {
 // Edit media title & description from lightbox
 function showEditMediaForm(cur, onUpdated){
   const html='<div class="fg"><label class="fl">标题</label><input type="text" class="fi" id="em-title" value="'+U.esc(cur.title||'')+'" placeholder="给'+ (cur.isVideo?'视频':'照片')+'取个名字"></div>'+
-    '<div class="fg"><label class="fl">日期</label><input type="date" class="fi" id="em-date" value="'+cur.date+'"></div>'+
+    '<div class="fr"><div class="fg"><label class="fl">日期</label><input type="date" class="fi" id="em-date" value="'+cur.date+'"></div><div class="fg"><label class="fl">时间</label><input type="time" class="fi" id="em-time" value="'+(cur.time||'')+'"></div></div>'+
     '<div class="fg"><label class="fl">描述</label><textarea class="ft" id="em-desc" rows="3" placeholder="写下这一刻的故事...">'+U.esc(cur.description||'')+'</textarea></div>';
   showModal('编辑'+(cur.isVideo?'视频':'照片'),html,async()=>{
-    const title=$('#em-title').value.trim(),desc=$('#em-desc').value.trim(),date=$('#em-date').value;
+    const title=$('#em-title').value.trim(),desc=$('#em-desc').value.trim(),date=$('#em-date').value,time=$('#em-time').value;
     if(!date){toast('请选择日期','err');return false;}
     try{
-      await API.updatePhoto(cur.id,{title,description:desc,date:date});
-      cur.title=title;cur.description=desc;cur.date=date;
+      await API.updatePhoto(cur.id,{title,description:desc,date,time});
+      cur.title=title;cur.description=desc;cur.date=date;cur.time=time;
       const photo=appData.photos.find(x=>x.id===cur.id);
-      if(photo){photo.title=title;photo.description=desc;photo.date=date;}
+      if(photo){photo.title=title;photo.description=desc;photo.date=date;photo.time=time;}
       toast('已更新','ok');
       if(onUpdated)onUpdated();
       return true;
@@ -1186,7 +1186,7 @@ function showLightbox(photos,p){
     const mediaHtml=cur.isVideo
       ? '<video class="lb-video" src="'+cur.dataUrl+'" controls playsinline autoplay style="max-width:100%;max-height:70vh;border-radius:6px;outline:none"></video>'
       : '<img src="'+cur.dataUrl+'" alt="'+U.esc(cur.title||'')+'">';
-    ov.innerHTML='<button class="lb-close">✕</button>'+(idx>0?'<button class="lb-nav lb-prev">◀</button>':'')+(idx<photos.length-1?'<button class="lb-nav lb-next">▶</button>':'')+'<div class="lb-img">'+mediaHtml+'</div><div class="lb-cap"><div class="ltitle">'+(cur.isVideo?'🎬 ':'')+U.esc(cur.title||'无标题')+'</div>'+(cur.description?'<div class="lb-desc">'+U.esc(cur.description)+'</div>':'')+'<div class="ldate">'+U.fmtDate(cur.date)+' · '+(idx+1)+'/'+photos.length+'</div></div><div class="lb-acts"><button id="lb-edit" title="编辑">✏️</button><button id="lb-fav" title="'+(cur.favorite?'取消收藏':'收藏')+'">'+(cur.favorite?'⭐':'☆')+'</button><button id="lb-del" title="删除">🗑️</button></div>';
+    ov.innerHTML='<button class="lb-close">✕</button>'+(idx>0?'<button class="lb-nav lb-prev">◀</button>':'')+(idx<photos.length-1?'<button class="lb-nav lb-next">▶</button>':'')+'<div class="lb-img">'+mediaHtml+'</div><div class="lb-cap"><div class="ltitle">'+(cur.isVideo?'🎬 ':'')+U.esc(cur.title||'无标题')+'</div>'+(cur.description?'<div class="lb-desc">'+U.esc(cur.description)+'</div>':'')+'<div class="ldate">'+U.fmtDate(cur.date)+(cur.time?' '+cur.time:'')+' · '+(idx+1)+'/'+photos.length+'</div></div><div class="lb-acts"><button id="lb-edit" title="编辑">✏️</button><button id="lb-fav" title="'+(cur.favorite?'取消收藏':'收藏')+'">'+(cur.favorite?'⭐':'☆')+'</button><button id="lb-del" title="删除">🗑️</button></div>';
     ov.querySelector('.lb-close').onclick=close;
     ov.querySelector('.lb-close').onclick=close;
     const pv=ov.querySelector('.lb-prev');if(pv)pv.onclick=()=>{idx--;ri();};
