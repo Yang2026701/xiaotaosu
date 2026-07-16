@@ -58,11 +58,12 @@ input:focus,textarea:focus,select:focus{outline:none}
 
 /* Countdown card */
 .w-countdown{background:rgba(255,255,255,.55);backdrop-filter:blur(12px);border-radius:20px;padding:14px 24px;margin-bottom:36px;text-align:center;box-shadow:0 4px 20px rgba(255,160,122,.1);border:1px solid rgba(255,180,150,.2)}
-.w-cd-label{font-size:.75rem;color:#BCAAA4;letter-spacing:1px;margin-bottom:4px}
-.w-cd-row{display:flex;align-items:baseline;justify-content:center;gap:4px}
-.w-cd-num{font-size:2rem;font-weight:700;color:#FF8C69;font-variant-numeric:proportional-nums;animation:cdPulse 2s ease-in-out infinite}
+.w-cd-label{font-size:.95rem;font-weight:600;color:#FF8C69;letter-spacing:1px;margin-bottom:6px}
+.w-cd-row{display:flex;align-items:baseline;justify-content:center;gap:6px}
+.w-cd-num{font-size:2.2rem;font-weight:700;color:#FF8C69;font-variant-numeric:proportional-nums;animation:cdPulse 2s ease-in-out infinite}
 @keyframes cdPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-.w-cd-unit{font-size:.95rem;color:#8D6E63}
+.w-cd-emoji{font-size:1.3rem}
+.w-cd-unit{font-size:1.05rem;color:#8D6E63;font-weight:500}
 
 .w-enter{display:inline-flex;align-items:center;gap:10px;padding:16px 48px;border-radius:50px;background:linear-gradient(135deg,#FFA07A,#FF8C69);color:#fff;font-size:1.15rem;font-weight:600;letter-spacing:2px;box-shadow:0 8px 28px rgba(255,140,105,.35);transition:transform .2s}
 .w-enter:active{transform:scale(.94)}
@@ -300,7 +301,7 @@ input:focus,textarea:focus,select:focus{outline:none}
       <div class="w-stat"><span class="w-stat-num" id="wms">--</span><span class="w-stat-lbl">里程碑</span></div>
     </div>
     <div id="w-countdown" class="w-countdown">
-      <div class="w-cd-label" id="w-cd-name">百天</div>
+      <div class="w-cd-label"><span id="w-cd-emoji"></span> <span id="w-cd-name">百天</span></div>
       <div class="w-cd-row">
         <span class="w-cd-num" id="w-cd-days">--</span>
         <span class="w-cd-unit">天后到来 🎉</span>
@@ -606,8 +607,12 @@ function showWelcome() {
   const milestones = getUpcomingMilestones(s.birthDate);
   if (milestones.length > 0) {
     const next = milestones[0];
-    $('#w-cd-name').textContent = '距离' + next.label;
+    $('#w-cd-emoji').textContent = next.emoji;
+    $('#w-cd-name').textContent = next.label;
     $('#w-cd-days').textContent = next.daysLeft;
+    if (next.daysLeft === 0) {
+      document.querySelector('.w-cd-unit').textContent = '🎊🎊🎊';
+    }
   } else {
     $('#w-countdown').style.display = 'none';
   }
