@@ -1419,20 +1419,19 @@ function showMsForm(existing){
 //  GROWTH PAGE
 // ============================================================
 function renderGrowth(){
+  try{
   var records=appData.growthRecords.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
   var birth=appData.settings.birthDate;
   records.forEach(function(r){r.ageInDays=U.age(birth,r.date).totalDays;});
   var latest=records.length>0?records[records.length-1]:null;
   var prev=records.length>1?records[records.length-2]:null;
 
-  // Percentile assessment
   var ageDays=latest?latest.ageInDays:0;
-  var htPct=latest?getPercentile(ageDays,latest.height,'height'):null;
-  var wtPct=latest?getPercentile(ageDays,latest.weight,'weight'):null;
-  var hcPct=latest&&latest.headCircumference?getPercentile(ageDays,latest.headCircumference,'head'):null;
+  var htPct=latest&&latest.height!=null?getPercentile(ageDays,latest.height,'height'):null;
+  var wtPct=latest&&latest.weight!=null?getPercentile(ageDays,latest.weight,'weight'):null;
+  var hcPct=latest&&latest.headCircumference!=null?getPercentile(ageDays,latest.headCircumference,'head'):null;
 
   var html='';
-  // Assessment card
   if(latest){
     html+='<div class="growth-assess"><h3>📊 发育评估</h3>';
     html+=assessLine(htPct,'📏','身高',latest.height+'cm');
@@ -1468,16 +1467,19 @@ function renderGrowth(){
   $('#page-growth').innerHTML=html;
 
   $('#btn-add-gr')?.addEventListener('click',showGrForm);
-  $$('.btn-del-gr').forEach(b=>{b.addEventListener('click',(e)=>{e.stopPropagation();confirm('确定删除？',async()=>{await API.deleteGrowth(b.dataset.id);toast('已删除','ok');reloadData().then(()=>renderPage());});});});
+  $$('.btn-del-gr').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();confirm('确定删除？',async function(){await API.deleteGrowth(b.dataset.id);toast('已删除','ok');reloadData().then(function(){renderPage();});});});});
 
-  if(records.length>0) setTimeout(function(){ renderCharts(records,birth); },200);
+  if(records.length>0){setTimeout(function(){renderCharts(records,birth);},200);}
+  }catch(e){console.error('renderGrowth error:',e);$('#page-growth').innerHTML=emptyState('📊','加载失败','请刷新重试');}
 }
 
 function stile(icon,label,value,unit,ds,pct){var pctHtml='';if(pct&&value!=='--'){var color=pct>=15&&pct<=85?'#81C784':pct<3||pct>97?'#EF9A9A':'#FFD54F';pctHtml='<div style="font-size:.7rem;color:'+color+';margin-top:2px;font-weight:500">P'+pct+'</div>';}return'<div class="stat-tile"><div style="font-size:1.5rem;margin-bottom:4px">'+icon+'</div><div class="stat-val">'+(value!=='--'?value:'--')+'<span class="u">'+(value!=='--'?unit:'')+'</span></div><div class="stat-lbl">'+label+'</div>'+pctHtml+(ds?'<div class="stat-lbl" style="color:#81C784">'+ds+'</div>':'')+'</div>';}
 function deltaS(c,p,u){if(c==null||p==null)return'';const d=c-p;return(d>=0?'+':'')+d.toFixed(1)+u+' 较上次';}
 
 function renderCharts(records,birth){
-  if(heightChart)heightChart.destroy();if(weightChart)weightChart.destroy();
+  try{if(heightChart){heightChart.destroy();heightChart=null;}}catch(e){}
+  try{if(weightChart){weightChart.destroy();weightChart=null;}}catch(e){}
+  if(typeof Chart==='undefined')return;
   var maxAge=Math.max(730,0);records.forEach(function(r){if(r.ageInDays>maxAge)maxAge=r.ageInDays;});
 
   var hData=[];records.forEach(function(r){if(r.height!=null)hData.push({x:r.ageInDays,y:r.height});});
@@ -1508,7 +1510,7 @@ function renderCharts(records,birth){
   }
 }
 
-async function getPercentile(ageDays,value,metric){
+function getPercentile(ageDays,value,metric){
   // Find where the value falls among WHO reference percentiles
   var refs=[3,15,50,85,97];
   for(var i=0;i<WHO_GIRLS.length-1;i++){
