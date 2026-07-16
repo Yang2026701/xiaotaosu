@@ -1605,6 +1605,7 @@ function renderHealth(){
 function showPendingList(dueVaccines,dueCheckups,records){
   const birth=appData.settings.birthDate;
   const birthD=new Date(birth+'T00:00:00');
+  const now=new Date(),elapsed=Math.floor((now-birthD)/86400000);
   let html='';
   if(dueVaccines.length>0){
     html+='<h3 style="font-size:.9rem;color:#FF8C69;margin-bottom:8px">💉 近期需接种疫苗 ('+dueVaccines.length+'项)</h3>';
