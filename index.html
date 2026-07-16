@@ -666,12 +666,12 @@ function getTimePeriod(){
   return'night';
 }
 
-// Each time period has a distinct scale + tempo
+// "Windy Place" inspired — warm piano tones, slow flowing melodies
 const MUSIC_PRESETS={
-  morning:{scale:[262,294,330,349,392,440,494],bpm:14,reverb:0.4,noteLen:2.5,label:'晨光'},
-  afternoon:{scale:[330,392,440,523,587,659,784],bpm:18,reverb:0.3,noteLen:2.0,label:'暖阳'},
-  evening:{scale:[294,349,392,466,523,587,698],bpm:12,reverb:0.5,noteLen:3.0,label:'晚风'},
-  night:{scale:[262,294,330,349,392,440],bpm:10,reverb:0.6,noteLen:3.5,label:'摇篮'}
+  morning:{scale:[262,294,330,349,392,440,494,523],bpm:12,reverb:0.5,noteLen:3.0,label:'晨光'},
+  afternoon:{scale:[330,392,440,494,523,587,659],bpm:14,reverb:0.45,noteLen:2.8,label:'暖阳'},
+  evening:{scale:[294,349,392,440,494,523,587],bpm:10,reverb:0.6,noteLen:3.5,label:'晚风'},
+  night:{scale:[262,294,330,349,392,440,494],bpm:8,reverb:0.7,noteLen:4.0,label:'摇篮'}
 };
 
 function playNote(freq, duration, period){
@@ -679,54 +679,82 @@ function playNote(freq, duration, period){
   const now=musicCtx.currentTime;
   const preset=MUSIC_PRESETS[period];
 
-  // Soft triangle wave oscillator
-  const osc=musicCtx.createOscillator();
-  osc.type='triangle';
-  osc.frequency.value=freq;
+  // Piano-like tone: sine fundamental + soft harmonic
+  const osc1=musicCtx.createOscillator(); // fundamental
+  osc1.type='sine';
+  osc1.frequency.value=freq;
 
-  // Envelope: gentle attack, long decay
+  const osc2=musicCtx.createOscillator(); // soft octave harmonic
+  osc2.type='sine';
+  osc2.frequency.value=freq*2;
+  const h2Gain=musicCtx.createGain();
+  h2Gain.gain.value=0.08;
+
+  // Piano envelope: quick attack, natural decay
   const envGain=musicCtx.createGain();
   envGain.gain.setValueAtTime(0,now);
-  envGain.gain.linearRampToValueAtTime(0.6,now+0.3);
-  envGain.gain.exponentialRampToValueAtTime(0.001,now+duration);
+  envGain.gain.linearRampToValueAtTime(0.45,now+0.08);  // hammer strike
+  envGain.gain.setValueAtTime(0.35,now+0.15);
+  envGain.gain.exponentialRampToValueAtTime(0.001,now+duration); // natural decay
 
-  // Subtle reverb via delayed feedback
-  const delay=musicCtx.createDelay(0.5);
-  delay.delayTime.value=preset.reverb;
-  const fb=musicCtx.createGain();
-  fb.gain.value=0.15;
+  // Warm reverb with longer tail
+  const delay1=musicCtx.createDelay(0.6);
+  delay1.delayTime.value=preset.reverb+0.1;
+  const delay2=musicCtx.createDelay(0.35);
+  delay2.delayTime.value=preset.reverb+0.2;
+  const fb1=musicCtx.createGain();fb1.gain.value=0.12;
+  const fb2=musicCtx.createGain();fb2.gain.value=0.10;
 
-  osc.connect(envGain);
+  osc1.connect(envGain);
+  osc2.connect(h2Gain);h2Gain.connect(envGain);
   envGain.connect(musicGain);
-  envGain.connect(delay);
-  delay.connect(fb);
-  fb.connect(delay);
-  fb.connect(musicGain);
+  // Dual-path reverb
+  envGain.connect(delay1);delay1.connect(fb1);fb1.connect(delay1);fb1.connect(delay2);
+  envGain.connect(delay2);delay2.connect(fb2);fb2.connect(delay2);fb2.connect(musicGain);
 
-  osc.start(now);
-  osc.stop(now+duration+0.5);
+  osc1.start(now);
+  osc2.start(now);
+  osc1.stop(now+duration+1);
+  osc2.stop(now+duration+1);
 }
 
+// Melodic phrase generator with stepwise motion
+let lastIdx=-1,phraseStep=0,phraseDir=1;
 function playNextNote(){
   if(!musicPlaying)return;
   const period=getTimePeriod();
   const preset=MUSIC_PRESETS[period];
   const scale=preset.scale;
+  const n=scale.length;
 
-  // Pick a note — prefer stepwise motion
-  const idx=Math.floor(Math.random()*scale.length);
-  const freq=scale[idx];
-
-  // Occasionally play a gentle chord (root + third)
-  if(Math.random()<0.25){
-    const third=scale[(idx+2)%scale.length];
-    playNote(freq,preset.noteLen,period);
-    setTimeout(()=>{if(musicPlaying)playNote(third,preset.noteLen*0.7,period);},200);
-  }else{
-    playNote(freq,preset.noteLen,period);
+  // Build flowing phrases: stepwise motion, occasional leaps
+  if(lastIdx<0||phraseStep>=5+Math.floor(Math.random()*4)){
+    // Start new phrase
+    lastIdx=Math.floor(Math.random()*n);
+    phraseStep=0;
+    phraseDir=Math.random()<0.5?-1:1;
+    // Occasional large leap for emotional lift
+    if(Math.random()<0.15)lastIdx=Math.min(n-1,Math.max(0,lastIdx+(phraseDir*3)));
   }
 
-  const interval=(60/preset.bpm)*1000*(0.7+Math.random()*0.6);
+  const freq=scale[lastIdx];
+  playNote(freq,preset.noteLen,period);
+
+  // Occasional soft chord (root + fifth, wide spread)
+  if(Math.random()<0.2){
+    const fifth=scale[Math.min(n-1,lastIdx+4)];
+    if(fifth)setTimeout(()=>{if(musicPlaying)playNote(fifth,preset.noteLen*1.2,period);},150);
+  }
+
+  // Stepwise movement within phrase
+  phraseStep++;
+  if(phraseStep%2===0||Math.random()<0.6){
+    lastIdx=Math.min(n-1,Math.max(0,lastIdx+phraseDir));
+  }
+  if(lastIdx===0)phraseDir=1;
+  if(lastIdx===n-1)phraseDir=-1;
+
+  const interval=(60/preset.bpm)*1000*(0.85+Math.random()*0.3);
   musicTimer=setTimeout(playNextNote,interval);
 }
 
@@ -755,7 +783,7 @@ function toggleMusic(){
 function showMusicToast(){
   const p=getTimePeriod();
   const preset=MUSIC_PRESETS[p];
-  const names={morning:'晨光曲',afternoon:'暖阳曲',evening:'晚风曲',night:'摇篮曲'};
+  const names={morning:'有风的地方·晨',afternoon:'有风的地方·暖',evening:'有风的地方·夕',night:'有风的地方·梦'};
   const toast=document.createElement('div');
   toast.className='toast';
   toast.textContent='🎵 '+names[p]+' · '+preset.label;
