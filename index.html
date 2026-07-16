@@ -616,7 +616,7 @@ async function enterApp(config) {
 
     // Load data
     try {
-      const [photos, milestones, growth, diary] = await Promise.all([
+      const [photos, milestones, growth, diary, health] = await Promise.all([
         API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[])
       ]);
       appData.photos = photos;
@@ -875,7 +875,7 @@ function setupMainApp() {
 
 async function reloadData() {
   try {
-    const [photos, milestones, growth, diary] = await Promise.all([
+    const [photos, milestones, growth, diary, health] = await Promise.all([
       API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[])
     ]);
     appData.photos = photos; appData.milestones = milestones;
