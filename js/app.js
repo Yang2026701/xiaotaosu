@@ -35,10 +35,10 @@
   let welcomeCanvasCtx = null, welcomeAnimId = null, welcomeParticles = [];
 
   // ============================================================
-  //  Bootstrap — show lock screen first
+  //  Bootstrap — lock screen ALWAYS first, then init Supabase
   // ============================================================
   function init() {
-    data.init(); // Init Supabase client
+    // Lock screen ALWAYS runs first — Supabase is called only on passcode submit
     initLockScreen();
     startLockParticles();
   }
@@ -49,47 +49,70 @@
   function initLockScreen() {
     const passcode = sessionStorage.getItem('xts_passcode');
     if (passcode) {
-      // Already authenticated this session — try to skip lock
       checkAndEnter(passcode);
       return;
     }
 
-    document.getElementById('lock-submit').addEventListener('click', () => {
-      const input = document.getElementById('lock-passcode').value.trim();
-      if (!input) return;
+    const submitBtn = document.getElementById('lock-submit');
+    const inputEl = document.getElementById('lock-passcode');
+
+    if (!submitBtn || !inputEl) {
+      console.error('Lock screen elements not found');
+      return;
+    }
+
+    submitBtn.addEventListener('click', () => {
+      const input = inputEl.value.trim();
+      if (!input) {
+        document.getElementById('lock-error').textContent = '请输入密码';
+        return;
+      }
       checkAndEnter(input);
     });
 
-    document.getElementById('lock-passcode').addEventListener('keydown', (e) => {
+    inputEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         const input = e.target.value.trim();
         if (input) checkAndEnter(input);
       }
     });
+
+    // Auto-focus input
+    setTimeout(() => inputEl.focus(), 500);
   }
 
   async function checkAndEnter(input) {
     const lockBtn = document.getElementById('lock-submit');
     const lockErr = document.getElementById('lock-error');
-    lockBtn.textContent = '...';
+
+    // Show immediate loading feedback
+    lockBtn.textContent = '验证中...';
     lockBtn.disabled = true;
     lockErr.textContent = '';
 
-    // First, get config from Supabase (validates connection too)
+    // Add timeout — don't let it hang forever
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+    );
+
     try {
-      const config = await data.getConfig();
+      const config = await Promise.race([data.getConfig(), timeout]);
+
       if (config.passcode === input) {
-        // Success!
         sessionStorage.setItem('xts_passcode', input);
         await unlock(config);
       } else {
-        lockErr.textContent = '密码错误，请重试';
+        lockErr.textContent = '密码错误，请重试（默认密码: 123456）';
         lockBtn.textContent = '进入';
         lockBtn.disabled = false;
       }
     } catch (e) {
-      console.error('Supabase connection error:', e);
-      lockErr.textContent = '连接失败，请检查网络后刷新页面';
+      console.error('Login error:', e);
+      if (e.message === 'TIMEOUT') {
+        lockErr.textContent = '连接超时，请检查网络后刷新页面';
+      } else {
+        lockErr.textContent = '无法连接服务器，请检查网络或刷新重试';
+      }
       lockBtn.textContent = '进入';
       lockBtn.disabled = false;
     }

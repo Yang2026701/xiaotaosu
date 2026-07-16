@@ -1,59 +1,70 @@
 /* ============================================================
-   data.js — Supabase 数据层 (替代 storage.js)
-   所有 CRUD 操作通过 Supabase REST API
+   data.js — Supabase REST API (pure fetch, zero dependencies)
    ============================================================ */
+window.App = window.App || {};
 
 App.data = (() => {
 
-  let client = null;
   const BUCKET = 'media';
 
-  // ---- Init ----
-  function init() {
-    client = supabase.createClient(App.config.SUPABASE_URL, App.config.SUPABASE_ANON_KEY);
-    return client;
+  // ---- Helpers ----
+  function url()     { return App.config.SUPABASE_URL; }
+  function apiKey()  { return App.config.SUPABASE_ANON_KEY; }
+
+  function headers() {
+    return {
+      'apikey': apiKey(),
+      'Authorization': 'Bearer ' + apiKey(),
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    };
   }
 
-  function getClient() {
-    if (!client) return init();
-    return client;
+  async function req(method, path, body) {
+    const opts = { method, headers: headers() };
+    if (body) opts.body = JSON.stringify(body);
+
+    const res = await fetch(`${url()}${path}`, opts);
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`Supabase ${method} ${path} failed:`, res.status, errText);
+      throw new Error(`请求失败 (${res.status})`);
+    }
+
+    // For DELETE, might not have JSON body
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
   }
 
   // ============================================================
-  //  App Config (密码校验 + 宝宝信息)
+  //  App Config
   // ============================================================
   async function getConfig() {
-    const { data, error } = await getClient().from('app_config').select('*').eq('id', 1).single();
-    if (error) throw error;
-    return data;
+    const data = await req('GET', '/rest/v1/app_config?id=eq.1&select=*');
+    if (!data || data.length === 0) throw new Error('配置数据不存在');
+    return data[0];
   }
 
   async function checkPasscode(input) {
-    const { data, error } = await getClient().from('app_config')
-      .select('id').eq('id', 1).eq('passcode', input).single();
-    if (error || !data) return false;
-    return true;
+    const data = await req('GET', `/rest/v1/app_config?id=eq.1&passcode=eq.${encodeURIComponent(input)}&select=id`);
+    return data && data.length > 0;
   }
 
   async function updateConfig(updates) {
-    const { error } = await getClient().from('app_config').update(updates).eq('id', 1);
-    if (error) throw error;
+    return req('PATCH', '/rest/v1/app_config?id=eq.1', updates);
   }
 
   // ============================================================
   //  Photos
   // ============================================================
   async function getPhotos() {
-    const { data, error } = await getClient().from('photos')
-      .select('*').order('photo_date', { ascending: false });
-    if (error) throw error;
+    const data = await req('GET', '/rest/v1/photos?select=*&order=photo_date.desc');
     return (data || []).map(mapPhoto);
   }
 
   async function addPhoto(photo) {
-    const row = unmapPhoto(photo);
-    const { error } = await getClient().from('photos').insert(row);
-    if (error) throw error;
+    return req('POST', '/rest/v1/photos', unmapPhoto(photo));
   }
 
   async function updatePhoto(id, updates) {
@@ -61,69 +72,81 @@ App.data = (() => {
     if (updates.favorite !== undefined) row.favorite = updates.favorite;
     if (updates.title !== undefined) row.title = updates.title;
     if (updates.tags !== undefined) row.tags = updates.tags;
-    const { error } = await getClient().from('photos').update(row).eq('id', id);
-    if (error) throw error;
+    return req('PATCH', `/rest/v1/photos?id=eq.${encodeURIComponent(id)}`, row);
   }
 
   async function deletePhoto(id) {
-    // Also delete from storage
-    const { data: photo } = await getClient().from('photos').select('storage_path,thumb_path').eq('id', id).single();
-    if (photo) {
-      const paths = [photo.storage_path];
-      if (photo.thumb_path) paths.push(photo.thumb_path);
-      await getClient().storage.from(BUCKET).remove(paths);
-    }
-    const { error } = await getClient().from('photos').delete().eq('id', id);
-    if (error) throw error;
+    // Get photo paths first for storage cleanup
+    try {
+      const data = await req('GET', `/rest/v1/photos?id=eq.${encodeURIComponent(id)}&select=storage_path,thumb_path`);
+      if (data && data.length > 0) {
+        const p = data[0];
+        const paths = [p.storage_path];
+        if (p.thumb_path) paths.push(p.thumb_path);
+        // Remove from storage (don't fail if this errors)
+        try { await removeFile(paths); } catch(e) { console.warn('Storage cleanup failed:', e); }
+      }
+    } catch(e) { /* continue */ }
+    return req('DELETE', `/rest/v1/photos?id=eq.${encodeURIComponent(id)}`);
   }
 
-  // Upload photo file to Supabase Storage
+  // Upload file to Supabase Storage via REST
   async function uploadPhotoFile(file, photoId, isThumb) {
     const ext = file.type === 'image/png' ? 'png' : 'jpg';
     const folder = isThumb ? 'thumbs' : 'photos';
-    const filename = `${folder}/${photoId}.${ext}`;
-    const { data, error } = await getClient().storage.from(BUCKET).upload(filename, file, {
-      cacheControl: '31536000',
-      upsert: true,
-      contentType: file.type || 'image/jpeg'
+    const path = `${folder}/${photoId}.${ext}`;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`${url()}/storage/v1/object/${BUCKET}/${path}`, {
+      method: 'POST',
+      headers: { 'apikey': apiKey(), 'Authorization': 'Bearer ' + apiKey() },
+      body: formData
     });
-    if (error) throw error;
-    return data.path;
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error('Upload failed:', res.status, err);
+      throw new Error(`上传失败 (${res.status})`);
+    }
+
+    return path;
   }
 
-  // Get public URL for a storage path
+  // Remove files from storage
+  async function removeFile(paths) {
+    const pathParams = paths.map(p => `paths=${encodeURIComponent(p)}`).join('&');
+    const res = await fetch(`${url()}/storage/v1/object/${BUCKET}?${pathParams}`, {
+      method: 'DELETE',
+      headers: { 'apikey': apiKey(), 'Authorization': 'Bearer ' + apiKey() }
+    });
+    if (!res.ok) console.warn('Storage delete failed:', res.status);
+  }
+
+  // Get public URL
   function getPublicUrl(path) {
     if (!path) return '';
-    return getClient().storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    return `${url()}/storage/v1/object/public/${path}`;
   }
 
-  // Map DB row → app model (add public URLs)
   function mapPhoto(row) {
     return {
-      id: row.id,
-      title: row.title || '',
-      description: row.description || '',
+      id: row.id, title: row.title || '', description: row.description || '',
       date: row.photo_date,
       dataUrl: getPublicUrl(row.storage_path),
       thumbnailDataUrl: getPublicUrl(row.thumb_path) || getPublicUrl(row.storage_path),
-      tags: row.tags || [],
-      favorite: row.favorite || false,
-      originalSize: row.original_size || 0,
-      createdAt: row.created_at
+      tags: row.tags || [], favorite: row.favorite || false,
+      originalSize: row.original_size || 0, createdAt: row.created_at
     };
   }
 
   function unmapPhoto(p) {
     return {
-      id: p.id,
-      title: p.title,
-      description: p.description,
-      photo_date: p.date,
-      storage_path: p.storage_path || p._storagePath || '',
-      thumb_path: p.thumb_path || p._thumbPath || '',
-      tags: p.tags,
-      favorite: p.favorite,
-      original_size: p.originalSize
+      id: p.id, title: p.title, description: p.description,
+      photo_date: p.date, storage_path: p._storagePath || p.storage_path || '',
+      thumb_path: p._thumbPath || p.thumb_path || '',
+      tags: p.tags, favorite: p.favorite, original_size: p.originalSize
     };
   }
 
@@ -131,127 +154,66 @@ App.data = (() => {
   //  Milestones
   // ============================================================
   async function getMilestones() {
-    const { data, error } = await getClient().from('milestones')
-      .select('*').order('milestone_date', { ascending: false });
-    if (error) throw error;
+    const data = await req('GET', '/rest/v1/milestones?select=*&order=milestone_date.desc');
     return (data || []).map(mapMs);
   }
-
-  async function addMilestone(ms) {
-    const { error } = await getClient().from('milestones').insert(unmapMs(ms));
-    if (error) throw error;
-  }
-
-  async function updateMilestone(id, updates) {
-    const { error } = await getClient().from('milestones').update(unmapMs(updates)).eq('id', id);
-    if (error) throw error;
-  }
-
-  async function deleteMilestone(id) {
-    const { error } = await getClient().from('milestones').delete().eq('id', id);
-    if (error) throw error;
-  }
+  async function addMilestone(ms) { return req('POST', '/rest/v1/milestones', unmapMs(ms)); }
+  async function updateMilestone(id, u) { return req('PATCH', `/rest/v1/milestones?id=eq.${encodeURIComponent(id)}`, unmapMs(u)); }
+  async function deleteMilestone(id) { return req('DELETE', `/rest/v1/milestones?id=eq.${encodeURIComponent(id)}`); }
 
   function mapMs(row) {
-    return {
-      id: row.id, category: row.category, type: row.type,
-      customLabel: row.custom_label, date: row.milestone_date,
-      ageInDays: row.age_days, title: row.title, emoji: row.emoji,
-      notes: row.notes, photoIds: row.photo_ids || [],
-      createdAt: row.created_at
-    };
+    return { id: row.id, category: row.category, type: row.type, customLabel: row.custom_label,
+      date: row.milestone_date, ageInDays: row.age_days, title: row.title, emoji: row.emoji,
+      notes: row.notes, photoIds: row.photo_ids || [], createdAt: row.created_at };
   }
-
   function unmapMs(m) {
-    return {
-      id: m.id, category: m.category, type: m.type,
-      custom_label: m.customLabel, milestone_date: m.date,
-      age_days: m.ageInDays, title: m.title, emoji: m.emoji,
-      notes: m.notes, photo_ids: m.photoIds
-    };
+    return { id: m.id, category: m.category, type: m.type, custom_label: m.customLabel,
+      milestone_date: m.date, age_days: m.ageInDays, title: m.title, emoji: m.emoji,
+      notes: m.notes, photo_ids: m.photoIds };
   }
 
   // ============================================================
   //  Growth Records
   // ============================================================
   async function getGrowthRecords() {
-    const { data, error } = await getClient().from('growth_records')
-      .select('*').order('record_date', { ascending: true });
-    if (error) throw error;
+    const data = await req('GET', '/rest/v1/growth_records?select=*&order=record_date.asc');
     return (data || []).map(mapGr);
   }
-
-  async function addGrowthRecord(gr) {
-    const { error } = await getClient().from('growth_records').insert(unmapGr(gr));
-    if (error) throw error;
-  }
-
-  async function deleteGrowthRecord(id) {
-    const { error } = await getClient().from('growth_records').delete().eq('id', id);
-    if (error) throw error;
-  }
+  async function addGrowthRecord(gr) { return req('POST', '/rest/v1/growth_records', unmapGr(gr)); }
+  async function deleteGrowthRecord(id) { return req('DELETE', `/rest/v1/growth_records?id=eq.${encodeURIComponent(id)}`); }
 
   function mapGr(row) {
-    return {
-      id: row.id, date: row.record_date, ageInDays: row.age_days,
-      height: row.height, weight: row.weight,
-      headCircumference: row.head_circumference,
-      notes: row.notes, createdAt: row.created_at
-    };
+    return { id: row.id, date: row.record_date, ageInDays: row.age_days,
+      height: row.height, weight: row.weight, headCircumference: row.head_circumference,
+      notes: row.notes, createdAt: row.created_at };
   }
-
   function unmapGr(g) {
-    return {
-      id: g.id, record_date: g.date, age_days: g.ageInDays,
-      height: g.height, weight: g.weight,
-      head_circumference: g.headCircumference, notes: g.notes
-    };
+    return { id: g.id, record_date: g.date, age_days: g.ageInDays,
+      height: g.height, weight: g.weight, head_circumference: g.headCircumference, notes: g.notes };
   }
 
   // ============================================================
-  //  Diary Entries
+  //  Diary
   // ============================================================
   async function getDiaryEntries() {
-    const { data, error } = await getClient().from('diary_entries')
-      .select('*').order('entry_date', { ascending: false });
-    if (error) throw error;
+    const data = await req('GET', '/rest/v1/diary_entries?select=*&order=entry_date.desc');
     return (data || []).map(mapDe);
   }
-
-  async function addDiaryEntry(de) {
-    const { error } = await getClient().from('diary_entries').insert(unmapDe(de));
-    if (error) throw error;
-  }
-
-  async function updateDiaryEntry(id, updates) {
-    const { error } = await getClient().from('diary_entries').update(unmapDe(updates)).eq('id', id);
-    if (error) throw error;
-  }
-
-  async function deleteDiaryEntry(id) {
-    const { error } = await getClient().from('diary_entries').delete().eq('id', id);
-    if (error) throw error;
-  }
+  async function addDiaryEntry(de) { return req('POST', '/rest/v1/diary_entries', unmapDe(de)); }
+  async function updateDiaryEntry(id, u) { return req('PATCH', `/rest/v1/diary_entries?id=eq.${encodeURIComponent(id)}`, unmapDe(u)); }
+  async function deleteDiaryEntry(id) { return req('DELETE', `/rest/v1/diary_entries?id=eq.${encodeURIComponent(id)}`); }
 
   function mapDe(row) {
-    return {
-      id: row.id, date: row.entry_date, title: row.title,
-      content: row.content, mood: row.mood,
-      photoIds: row.photo_ids || [], tags: row.tags || [],
-      createdAt: row.created_at, updatedAt: row.updated_at
-    };
+    return { id: row.id, date: row.entry_date, title: row.title, content: row.content,
+      mood: row.mood, photoIds: row.photo_ids || [], tags: row.tags || [],
+      createdAt: row.created_at, updatedAt: row.updated_at };
   }
-
   function unmapDe(d) {
-    return {
-      id: d.id, entry_date: d.date, title: d.title,
-      content: d.content, mood: d.mood,
-      photo_ids: d.photoIds, tags: d.tags
-    };
+    return { id: d.id, entry_date: d.date, title: d.title, content: d.content,
+      mood: d.mood, photo_ids: d.photoIds, tags: d.tags };
   }
 
   return {
-    init, getClient,
     getConfig, checkPasscode, updateConfig,
     getPhotos, addPhoto, updatePhoto, deletePhoto, uploadPhotoFile, getPublicUrl,
     getMilestones, addMilestone, updateMilestone, deleteMilestone,
