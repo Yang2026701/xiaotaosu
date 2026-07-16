@@ -1419,9 +1419,11 @@ function showMsForm(existing){
 //  GROWTH PAGE
 // ============================================================
 function renderGrowth(){
-  const records=[...appData.growthRecords].sort((a,b)=>a.date.localeCompare(b.date)),birth=appData.settings.birthDate;
-  records.forEach(r=>{r.ageInDays=U.age(birth,r.date).totalDays;});
-  const latest=records.length>0?records[records.length-1]:null,prev=records.length>1?records[records.length-2]:null;
+  var records=appData.growthRecords.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
+  var birth=appData.settings.birthDate;
+  records.forEach(function(r){r.ageInDays=U.age(birth,r.date).totalDays;});
+  var latest=records.length>0?records[records.length-1]:null;
+  var prev=records.length>1?records[records.length-2]:null;
 
   // Percentile assessment
   var ageDays=latest?latest.ageInDays:0;
@@ -1455,8 +1457,8 @@ function renderGrowth(){
   if(records.length===0){html+=emptyState('📊','还没有发育记录','添加身高体重数据来生成生长曲线吧~');}
   else{
     html+='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>日期</th><th>月龄</th><th>身高(cm)</th><th>体重(kg)</th><th>头围(cm)</th><th></th></tr></thead><tbody>';
-    [...records].reverse().forEach(r=>{
-      const age=U.age(birth,r.date);
+    records.slice().reverse().forEach(function(r){
+      var age=U.age(birth,r.date);
       html+='<tr><td>'+U.fmtShort(r.date)+'</td><td>'+age.text+'</td><td>'+(r.height!=null?r.height:'-')+'</td><td>'+(r.weight!=null?r.weight:'-')+'</td><td>'+(r.headCircumference!=null?r.headCircumference:'-')+'</td><td><button class="btn btn-s btn-sm btn-del-gr" data-id="'+r.id+'">删除</button></td></tr>';
     });
     html+='</tbody></table></div>';
@@ -1468,7 +1470,7 @@ function renderGrowth(){
   $('#btn-add-gr')?.addEventListener('click',showGrForm);
   $$('.btn-del-gr').forEach(b=>{b.addEventListener('click',(e)=>{e.stopPropagation();confirm('确定删除？',async()=>{await API.deleteGrowth(b.dataset.id);toast('已删除','ok');reloadData().then(()=>renderPage());});});});
 
-  // Charts loaded dynamically by loadChartJS wrapper
+  if(records.length>0) setTimeout(function(){ renderCharts(records,birth); },200);
 }
 
 function stile(icon,label,value,unit,ds,pct){var pctHtml='';if(pct&&value!=='--'){var color=pct>=15&&pct<=85?'#81C784':pct<3||pct>97?'#EF9A9A':'#FFD54F';pctHtml='<div style="font-size:.7rem;color:'+color+';margin-top:2px;font-weight:500">P'+pct+'</div>';}return'<div class="stat-tile"><div style="font-size:1.5rem;margin-bottom:4px">'+icon+'</div><div class="stat-val">'+(value!=='--'?value:'--')+'<span class="u">'+(value!=='--'?unit:'')+'</span></div><div class="stat-lbl">'+label+'</div>'+pctHtml+(ds?'<div class="stat-lbl" style="color:#81C784">'+ds+'</div>':'')+'</div>';}
