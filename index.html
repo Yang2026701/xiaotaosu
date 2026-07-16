@@ -617,7 +617,7 @@ async function enterApp(config) {
     // Load data
     try {
       const [photos, milestones, growth, diary] = await Promise.all([
-        API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth()
+        API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[])
       ]);
       appData.photos = photos;
       appData.milestones = milestones;
@@ -876,10 +876,10 @@ function setupMainApp() {
 async function reloadData() {
   try {
     const [photos, milestones, growth, diary] = await Promise.all([
-      API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth()
+      API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[])
     ]);
     appData.photos = photos; appData.milestones = milestones;
-    appData.growthRecords = growth; appData.diaryEntries = diary; appData.healthRecords = health; appData.healthRecords = health;
+    appData.growthRecords = growth; appData.diaryEntries = diary; appData.healthRecords = health||[]; appData.healthRecords = health||[];
   } catch (e) { console.error('Reload error:', e); }
 }
 
