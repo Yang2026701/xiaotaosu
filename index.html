@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="小桃酥的成长记录">
+  <meta name="theme-color" content="#FFF5F1">
+  <title>小桃酥的成长记录</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ============================================================
+       Passcode Lock Screen
+       ============================================================ -->
+  <div id="lock-screen">
+    <div class="lock-bg">
+      <div class="lock-bg-circle c1"></div>
+      <div class="lock-bg-circle c2"></div>
+    </div>
+    <canvas id="lock-canvas"></canvas>
+    <div class="lock-content">
+      <div class="lock-icon">🍑</div>
+      <h1 class="lock-title" id="lock-name">小桃酥</h1>
+      <p class="lock-sub">的成长记录</p>
+      <div class="lock-input-wrap">
+        <input type="password" class="lock-input" id="lock-passcode"
+               placeholder="输入访问密码" maxlength="20" autocomplete="off">
+        <button class="lock-btn" id="lock-submit">进入</button>
+      </div>
+      <p class="lock-error" id="lock-error"></p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Welcome Page (after passcode)
+       ============================================================ -->
+  <div id="welcome-page" hidden>
+    <div class="welcome-bg">
+      <div class="welcome-bg-circle c1"></div>
+      <div class="welcome-bg-circle c2"></div>
+      <div class="welcome-bg-circle c3"></div>
+    </div>
+    <div class="welcome-content">
+      <div class="welcome-hero">
+        <div class="welcome-hero-icon">🍑</div>
+        <h1 class="welcome-hero-title" id="welcome-baby-name">小桃酥</h1>
+        <p class="welcome-hero-sub" id="welcome-age-sub">的成长记录</p>
+      </div>
+      <div class="welcome-stats" id="welcome-stats">
+        <div class="welcome-stat-item">
+          <span class="welcome-stat-num" id="ws-age">--</span>
+          <span class="welcome-stat-lbl">月龄</span>
+        </div>
+        <div class="welcome-stat-divider"></div>
+        <div class="welcome-stat-item">
+          <span class="welcome-stat-num" id="ws-photos">--</span>
+          <span class="welcome-stat-lbl">照片</span>
+        </div>
+        <div class="welcome-stat-divider"></div>
+        <div class="welcome-stat-item">
+          <span class="welcome-stat-num" id="ws-milestones">--</span>
+          <span class="welcome-stat-lbl">里程碑</span>
+        </div>
+      </div>
+      <button class="welcome-enter-btn" id="btn-enter-app">
+        <span>开始记录</span><span class="welcome-enter-arrow">→</span>
+      </button>
+      <p class="welcome-footer">用爱记录每一个珍贵瞬间 💕</p>
+    </div>
+    <canvas id="welcome-canvas"></canvas>
+  </div>
+
+  <!-- ============================================================
+       Main App
+       ============================================================ -->
+  <div id="main-app" hidden>
+    <header id="app-bar">
+      <div class="app-bar-inner">
+        <div class="app-bar-left">
+          <span class="app-logo">🍑</span>
+          <div>
+            <h1 class="app-title" id="app-title">小桃酥的成长记录</h1>
+            <p class="app-subtitle" id="age-display">--</p>
+          </div>
+        </div>
+        <button class="btn-icon" id="btn-settings" aria-label="设置">⚙️</button>
+      </div>
+    </header>
+
+    <main id="content">
+      <section id="page-album" class="page" hidden></section>
+      <section id="page-milestones" class="page" hidden></section>
+      <section id="page-growth" class="page" hidden></section>
+      <section id="page-diary" class="page" hidden></section>
+      <section id="page-settings" class="page" hidden></section>
+    </main>
+
+    <nav id="tab-bar" role="tablist">
+      <button class="tab-btn active" data-tab="album" role="tab" aria-selected="true">📷<span class="tab-label">相册</span></button>
+      <button class="tab-btn" data-tab="milestones" role="tab" aria-selected="false">🏆<span class="tab-label">成长</span></button>
+      <button class="tab-btn" data-tab="growth" role="tab" aria-selected="false">📊<span class="tab-label">发育</span></button>
+      <button class="tab-btn" data-tab="diary" role="tab" aria-selected="false">📝<span class="tab-label">日记</span></button>
+    </nav>
+
+    <button id="fab" class="fab" aria-label="添加">+</button>
+
+    <div id="modal-overlay" class="modal-overlay" hidden>
+      <div id="modal-card" class="modal-card" role="dialog" aria-modal="true">
+        <div class="modal-header"><h2 id="modal-title"></h2><button class="btn-icon modal-close">✕</button></div>
+        <div id="modal-body" class="modal-body"></div>
+        <div id="modal-footer" class="modal-footer"></div>
+      </div>
+    </div>
+
+    <div id="confirm-overlay" class="modal-overlay" hidden>
+      <div class="modal-card confirm-card" role="alertdialog">
+        <div class="modal-body"><p id="confirm-message"></p></div>
+        <div class="modal-footer confirm-footer">
+          <button class="btn btn-secondary" id="confirm-cancel">取消</button>
+          <button class="btn btn-danger" id="confirm-ok">确认</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container" aria-live="polite"></div>
+    <input type="file" id="photo-input" accept="image/*" hidden>
+    <input type="file" id="video-input" accept="video/*" hidden>
+  </div>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- App Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/models.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/effects.js"></script>
+  <script src="js/pages/growth.js"></script>
+  <script src="js/pages/milestones.js"></script>
+  <script src="js/pages/album.js"></script>
+  <script src="js/pages/diary.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
