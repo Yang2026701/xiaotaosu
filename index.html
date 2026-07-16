@@ -80,6 +80,9 @@ input:focus,textarea:focus,select:focus{outline:none}
 .bar-sub{font-size:.75rem;color:#8D6E63}
 .btn-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.25rem}
 .btn-icon:active{background:#FFEDE6}
+#bmgmt.playing{animation:musicPulse 1.5s ease-in-out infinite;color:#FF8C69}
+@keyframes musicPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+#bmgmt{transition:color .3s}
 
 /* Content */
 #content{flex:1;padding:16px}
@@ -322,6 +325,7 @@ input:focus,textarea:focus,select:focus{outline:none}
         <p class="bar-sub" id="bage">--</p>
       </div>
     </div>
+    <button class="btn-icon" id="bmgmt">🎵</button>
     <button class="btn-icon" id="bsettings">⚙️</button>
   </header>
 
@@ -641,6 +645,130 @@ function initWelcomeParticles() {
 // ============================================================
 //  MAIN APP SETUP
 // ============================================================
+// ============================================================
+//  PROCEDURAL MUSIC ENGINE (Web Audio API)
+// ============================================================
+let musicPlaying=false,musicCtx=null,musicGain=null,musicTimer=null;
+
+function initMusic(){
+  if(musicCtx)return;
+  musicCtx=new(window.AudioContext||window.webkitAudioContext)();
+  musicGain=musicCtx.createGain();
+  musicGain.gain.value=0.25; // Default volume: gentle
+  musicGain.connect(musicCtx.destination);
+}
+
+function getTimePeriod(){
+  const h=new Date().getHours();
+  if(h>=6&&h<12)return'morning';
+  if(h>=12&&h<18)return'afternoon';
+  if(h>=18&&h<22)return'evening';
+  return'night';
+}
+
+// Each time period has a distinct scale + tempo
+const MUSIC_PRESETS={
+  morning:{scale:[262,294,330,349,392,440,494],bpm:14,reverb:0.4,noteLen:2.5,label:'晨光'},
+  afternoon:{scale:[330,392,440,523,587,659,784],bpm:18,reverb:0.3,noteLen:2.0,label:'暖阳'},
+  evening:{scale:[294,349,392,466,523,587,698],bpm:12,reverb:0.5,noteLen:3.0,label:'晚风'},
+  night:{scale:[262,294,330,349,392,440],bpm:10,reverb:0.6,noteLen:3.5,label:'摇篮'}
+};
+
+function playNote(freq, duration, period){
+  if(!musicCtx||!musicGain)return;
+  const now=musicCtx.currentTime;
+  const preset=MUSIC_PRESETS[period];
+
+  // Soft triangle wave oscillator
+  const osc=musicCtx.createOscillator();
+  osc.type='triangle';
+  osc.frequency.value=freq;
+
+  // Envelope: gentle attack, long decay
+  const envGain=musicCtx.createGain();
+  envGain.gain.setValueAtTime(0,now);
+  envGain.gain.linearRampToValueAtTime(0.6,now+0.3);
+  envGain.gain.exponentialRampToValueAtTime(0.001,now+duration);
+
+  // Subtle reverb via delayed feedback
+  const delay=musicCtx.createDelay(0.5);
+  delay.delayTime.value=preset.reverb;
+  const fb=musicCtx.createGain();
+  fb.gain.value=0.15;
+
+  osc.connect(envGain);
+  envGain.connect(musicGain);
+  envGain.connect(delay);
+  delay.connect(fb);
+  fb.connect(delay);
+  fb.connect(musicGain);
+
+  osc.start(now);
+  osc.stop(now+duration+0.5);
+}
+
+function playNextNote(){
+  if(!musicPlaying)return;
+  const period=getTimePeriod();
+  const preset=MUSIC_PRESETS[period];
+  const scale=preset.scale;
+
+  // Pick a note — prefer stepwise motion
+  const idx=Math.floor(Math.random()*scale.length);
+  const freq=scale[idx];
+
+  // Occasionally play a gentle chord (root + third)
+  if(Math.random()<0.25){
+    const third=scale[(idx+2)%scale.length];
+    playNote(freq,preset.noteLen,period);
+    setTimeout(()=>{if(musicPlaying)playNote(third,preset.noteLen*0.7,period);},200);
+  }else{
+    playNote(freq,preset.noteLen,period);
+  }
+
+  const interval=(60/preset.bpm)*1000*(0.7+Math.random()*0.6);
+  musicTimer=setTimeout(playNextNote,interval);
+}
+
+function startMusic(){
+  if(musicPlaying)return;
+  initMusic();
+  if(musicCtx.state==='suspended')musicCtx.resume();
+  musicPlaying=true;
+  playNextNote();
+  $('#bmgmt').classList.add('playing');
+  showMusicToast();
+}
+
+function stopMusic(){
+  musicPlaying=false;
+  if(musicTimer){clearTimeout(musicTimer);musicTimer=null;}
+  if(musicCtx)musicCtx.suspend();
+  $('#bmgmt').classList.remove('playing');
+}
+
+function toggleMusic(){
+  if(musicPlaying){stopMusic();}
+  else{startMusic();}
+}
+
+function showMusicToast(){
+  const p=getTimePeriod();
+  const preset=MUSIC_PRESETS[p];
+  const names={morning:'晨光曲',afternoon:'暖阳曲',evening:'晚风曲',night:'摇篮曲'};
+  const toast=document.createElement('div');
+  toast.className='toast';
+  toast.textContent='🎵 '+names[p]+' · '+preset.label;
+  document.getElementById('toasts').appendChild(toast);
+  setTimeout(()=>toast.remove(),2500);
+}
+
+// Check time period change every 5 min and switch music style
+setInterval(()=>{
+  if(!musicPlaying||!musicCtx)return;
+  // Restart note sequence on period change (just let next note pick new scale)
+},300000);
+
 function setupMainApp() {
   $('#main').hidden = false;
   updateTitle();
@@ -665,7 +793,11 @@ function setupMainApp() {
   });
 
   $('#bsettings').addEventListener('click', () => { location.hash = 'settings'; });
+  $('#bmgmt').addEventListener('click', toggleMusic);
   $('#fab').addEventListener('click', handleFab);
+
+  // Auto-start music on first app entry
+  setTimeout(()=>{startMusic();},800);
   $('#mclose').addEventListener('click', closeModal);
   $('#modal').addEventListener('click', (e) => { if(e.target===$('#modal')) closeModal(); });
 
