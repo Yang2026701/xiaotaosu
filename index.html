@@ -55,6 +55,15 @@ input:focus,textarea:focus,select:focus{outline:none}
 .w-stat-num{display:block;font-size:1.5rem;font-weight:700;color:#FF8C69}
 .w-stat-lbl{font-size:.7rem;color:#BCAAA4;letter-spacing:1px}
 .w-div{width:1px;height:32px;background:rgba(0,0,0,.06)}
+
+/* Countdown card */
+.w-countdown{background:rgba(255,255,255,.55);backdrop-filter:blur(12px);border-radius:20px;padding:14px 24px;margin-bottom:36px;text-align:center;box-shadow:0 4px 20px rgba(255,160,122,.1);border:1px solid rgba(255,180,150,.2)}
+.w-cd-label{font-size:.75rem;color:#BCAAA4;letter-spacing:1px;margin-bottom:4px}
+.w-cd-row{display:flex;align-items:baseline;justify-content:center;gap:4px}
+.w-cd-num{font-size:2rem;font-weight:700;color:#FF8C69;font-variant-numeric:proportional-nums;animation:cdPulse 2s ease-in-out infinite}
+@keyframes cdPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.w-cd-unit{font-size:.95rem;color:#8D6E63}
+
 .w-enter{display:inline-flex;align-items:center;gap:10px;padding:16px 48px;border-radius:50px;background:linear-gradient(135deg,#FFA07A,#FF8C69);color:#fff;font-size:1.15rem;font-weight:600;letter-spacing:2px;box-shadow:0 8px 28px rgba(255,140,105,.35);transition:transform .2s}
 .w-enter:active{transform:scale(.94)}
 .w-footer{margin-top:32px;font-size:.8rem;color:#BCAAA4;letter-spacing:1px}
@@ -289,6 +298,13 @@ input:focus,textarea:focus,select:focus{outline:none}
       <div class="w-stat"><span class="w-stat-num" id="wphotos">--</span><span class="w-stat-lbl">照片</span></div>
       <div class="w-div"></div>
       <div class="w-stat"><span class="w-stat-num" id="wms">--</span><span class="w-stat-lbl">里程碑</span></div>
+    </div>
+    <div id="w-countdown" class="w-countdown">
+      <div class="w-cd-label" id="w-cd-name">百天</div>
+      <div class="w-cd-row">
+        <span class="w-cd-num" id="w-cd-days">--</span>
+        <span class="w-cd-unit">天后到来 🎉</span>
+      </div>
     </div>
     <button class="w-enter" id="wenter">开始记录 <span>→</span></button>
     <p class="w-footer">用爱记录每一个珍贵瞬间 💕</p>
@@ -585,6 +601,16 @@ function showWelcome() {
   $('#wage').textContent = age.text;
   $('#wphotos').textContent = appData.photos.length;
   $('#wms').textContent = msAchieved.size;
+
+  // Countdown to next milestone
+  const milestones = getUpcomingMilestones(s.birthDate);
+  if (milestones.length > 0) {
+    const next = milestones[0];
+    $('#w-cd-name').textContent = '距离' + next.label;
+    $('#w-cd-days').textContent = next.daysLeft;
+  } else {
+    $('#w-countdown').style.display = 'none';
+  }
 
   $('#welcome').hidden = false;
   initWelcomeParticles();
@@ -1197,6 +1223,39 @@ function editSetting(field){
       updateAge();toast('已更新','ok');return true;
     }catch(e){toast('更新失败: '+e.message,'err');return false;}
   });
+}
+
+// ============================================================
+//  COUNTDOWN HELPERS
+// ============================================================
+function getUpcomingMilestones(birthDate) {
+  const birth = new Date(birthDate + 'T00:00:00');
+  const today = new Date();
+  const elapsed = Math.floor((today - birth) / 86400000);
+
+  // Define key milestones: [days, emoji, label]
+  const keyDays = [
+    { days: 30,   emoji: '🌕', label: '满月' },
+    { days: 42,   emoji: '🍼', label: '产后复查' },
+    { days: 100,  emoji: '🎂', label: '百天' },
+    { days: 183,  emoji: '👶', label: '半岁' },
+    { days: 365,  emoji: '🎈', label: '周岁' },
+    { days: 730,  emoji: '🌟', label: '两岁' },
+    { days: 1095, emoji: '🎓', label: '三岁' },
+  ];
+
+  // Filter to future milestones, sorted nearest first
+  const upcoming = keyDays
+    .filter(m => m.days > elapsed)
+    .map(m => ({ ...m, daysLeft: m.days - elapsed }));
+
+  // Also check if today IS a milestone
+  const todayMatch = keyDays.find(m => m.days === elapsed);
+  if (todayMatch) {
+    return [{ ...todayMatch, daysLeft: 0, label: todayMatch.label + '就是今天！' }];
+  }
+
+  return upcoming;
 }
 
 // ============================================================
