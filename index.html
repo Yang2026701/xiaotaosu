@@ -853,7 +853,7 @@ function setupMainApp() {
 
   window.addEventListener('hashchange', async () => {
     const tab = location.hash.replace('#','');
-    if (['album','milestones','growth','diary','settings'].includes(tab)) {
+    if (['album','milestones','growth','diary','health','settings'].includes(tab)) {
       await reloadData();
       navigate(tab);
     }
@@ -901,6 +901,7 @@ function renderPage() {
     case'milestones':renderMilestones();break;
     case'growth':renderGrowth();break;
     case'diary':renderDiary();break;
+    case'health':renderHealth();break;
     case'settings':renderSettings();break;
   }
 }
