@@ -241,6 +241,13 @@ input:focus,textarea:focus,select:focus{outline:none}
 .dc-tpl-btn{text-align:center;padding:10px 4px;border-radius:10px;border:1px dashed #EDE7E0;cursor:pointer;font-size:.75rem;transition:all .15s}
 .dc-tpl-btn:active{background:#FFF0EB;border-color:#FFA07A}
 .dc-tpl-btn .tpl-icon{font-size:1.2rem;display:block;margin-bottom:2px}
+.dc-add-hero{background:linear-gradient(135deg,#FFF0EB,#FFE4E8);border-radius:20px;padding:28px 20px;text-align:center;cursor:pointer;transition:transform .2s,box-shadow .2s;border:2px dashed rgba(255,160,122,.3);animation:heroGlow 3s ease-in-out infinite}
+.dc-add-hero:active{transform:scale(.96);box-shadow:0 4px 20px rgba(255,160,122,.15)}
+@keyframes heroGlow{0%,100%{box-shadow:0 0 20px rgba(255,160,122,.1)}50%{box-shadow:0 0 40px rgba(255,160,122,.2)}}
+.dc-add-icon{font-size:3rem;display:block;margin-bottom:8px;animation:floatIcon 2.5s ease-in-out infinite}
+.dc-add-title{font-size:1.2rem;font-weight:700;color:#4E342E;margin-bottom:4px}
+.dc-add-sub{font-size:.8rem;color:#BCAAA4;margin-bottom:12px}
+.dc-add-btn{display:inline-block;padding:10px 32px;background:linear-gradient(135deg,#FFA07A,#FF8C69);color:#fff;border-radius:25px;font-size:.9rem;font-weight:600;letter-spacing:1px;box-shadow:0 4px 16px rgba(255,140,105,.3)}
 .detail-h{margin-bottom:24px}
 .detail-content{font-size:1rem;line-height:1.8;white-space:pre-wrap;margin-bottom:24px}
 /* Parenting Guide */
@@ -1485,7 +1492,7 @@ function renderDiary(){
   if(diaryDetail){const e=entries.find(x=>x.id===diaryDetail);if(e){renderDiaryDetail(e);return;}diaryDetail=null;}
 
   if(entries.length===0){
-    $('#page-diary').innerHTML='<div class="dc-template">'+['📝','✨','💌'].map((ic,i)=>{var tt=['今日第一次','今日趣事','妈妈想对你说'];return'<div class="dc-tpl-btn" onclick="startDiaryTemplate(\''+tt[i]+'\')"><span class="tpl-icon">'+ic+'</span>'+tt[i]+'</div>';}).join('')+'</div>'+emptyState('📝','还没有日记哦','记录和小桃酥在一起的每一个温暖瞬间~');return;
+    $('#page-diary').innerHTML='<div style="padding:24px 0">'+'<div class="dc-add-hero" onclick="startDiaryTemplate(\'爸爸妈妈想对你说\')"><div class="dc-add-icon">💌</div><div class="dc-add-title">写给小桃酥</div><div class="dc-add-sub">记录每一个温暖的瞬间</div><div class="dc-add-btn">开始写日记</div></div>'+'<div style="display:flex;gap:10px;justify-content:center;margin-top:16px">'+['📝今日第一次','✨今日趣事'].map(function(t){var key=t.slice(0,1)===String.fromCharCode(0xD83D,0xDCDD)?'今日第一次':'今日趣事';return'<div class="dc-tpl-btn" style="flex:1;max-width:140px" onclick="startDiaryTemplate(\''+t.slice(2)+'\')"><span class="tpl-icon">'+t.slice(0,2)+'</span>'+t.slice(2)+'</div>';}).join('')+'</div>'+'</div>';return;
   }
 
   const birth=appData.settings.birthDate, today=U.today();
@@ -1494,7 +1501,7 @@ function renderDiary(){
   // AI Insights placeholder
   html+='<div id="dy-insight"></div>';
   // Templates
-  html+='<div class="dc-template">'+['✨','💡','💌'].map((ic,i)=>{var tt=['今日第一次','今日趣事','妈妈想对你说'];return'<div class="dc-tpl-btn" onclick="startDiaryTemplate(\''+tt[i]+'\')"><span class="tpl-icon">'+ic+'</span>'+tt[i]+'</div>';}).join('')+'</div>';
+  html+='<div class="dc-add-hero" onclick="startDiaryTemplate(\'爸爸妈妈想对你说\')"><div class="dc-add-icon">💌</div><div class="dc-add-title">写给小桃酥</div><div class="dc-add-sub">记录每一个温暖的瞬间</div><div class="dc-add-btn">开始写日记</div></div>'+'<div style="display:flex;gap:10px;justify-content:center;margin:12px 0 16px">'+'<div class="dc-tpl-btn" style="flex:1;max-width:140px" onclick="startDiaryTemplate(\'今日第一次\')"><span class="tpl-icon">📝</span>今日第一次</div>'+'<div class="dc-tpl-btn" style="flex:1;max-width:140px" onclick="startDiaryTemplate(\'今日趣事\')"><span class="tpl-icon">✨</span>今日趣事</div>'+'</div>';
 
   // That-year-today
   var thisDayEntries=entries.filter(function(e){return e.date.substring(5)===today.substring(5)&&e.date!==today;});
@@ -1533,7 +1540,7 @@ function startDiaryTemplate(tpl){
   switch(tpl){
     case'今日第一次':title=age.text+'的第一次';content='今天小桃酥第一次...\n\n我们好惊喜，赶紧记录下来。';break;
     case'今日趣事':title='小桃酥的趣事';content='今天发生了一件好玩的事...\n\n小桃酥的反应太可爱了！';break;
-    case'妈妈想对你说':title='写给小桃酥';content='亲爱的宝贝，\n\n今天妈妈想对你说...';break;
+    case'爸爸妈妈想对你说':title='写给小桃酥';content='亲爱的宝贝，\n\n今天爸爸妈妈想对你说...';break;
   }
   showDiaryForm(null,tpl,title,content);
 }
@@ -1569,7 +1576,7 @@ function renderDiaryDetail(e){
 
 function showDiaryForm(existing,tplName,tplTitle,tplContent){
   var isEdit=!!existing,today=U.today();
-  var selMood=existing?existing.mood:(tplName==='妈妈想对你说'?'touched':'joyful');
+  var selMood=existing?existing.mood:(tplName==='爸爸妈妈想对你说'?'grateful':'joyful');
   var selWeather=existing?existing.weather||'':'';
   var moodsHtml=MOODS.map(function(md){return'<button class="mood-o'+(selMood===md.key?' sel':'')+'" data-mood="'+md.key+'" title="'+md.label+'">'+md.emoji+'</button>';}).join('');
   var weathers=['☀️','⛅','☁️','🌧️','⛈️','❄️','🌈','🌙'];
