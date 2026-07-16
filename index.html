@@ -6,13 +6,13 @@
 <title>小桃酥的成长记录</title>
 
 <!-- PWA -->
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="/xiaotaosu/manifest.json">
 <meta name="theme-color" content="#FFA07A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="小桃酥">
-<link rel="apple-touch-icon" href="/icon-192.png">
-<link rel="icon" type="image/png" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/xiaotaosu/icon-192.png">
+<link rel="icon" type="image/png" href="/xiaotaosu/icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="小桃酥">
 
@@ -478,7 +478,7 @@ input:focus,textarea:focus,select:focus{outline:none}
 
 // ---- Service Worker (PWA) ----
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').then(function(reg){
+  navigator.serviceWorker.register('/xiaotaosu/sw.js',{scope:'/xiaotaosu/'}).then(function(reg){
     console.log('SW registered:', reg.scope);
   }).catch(function(err){
     console.warn('SW registration failed:', err);

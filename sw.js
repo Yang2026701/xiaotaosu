@@ -1,12 +1,11 @@
 // Service Worker for 小桃酥的成长记录 PWA
 const CACHE_NAME = 'xiaotaosu-v2';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/css/styles.css',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
+  '/xiaotaosu/',
+  '/xiaotaosu/index.html',
+  '/xiaotaosu/manifest.json',
+  '/xiaotaosu/icon-192.png',
+  '/xiaotaosu/icon-512.png',
   // JS files are inlined in index.html, so just cache the HTML
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'
 ];
