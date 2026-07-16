@@ -664,7 +664,7 @@ lockInput.addEventListener('keydown', (e) => {
 // ============================================================
 async function enterApp(config) {
   appData.settings.babyName = config.baby_name || CFG.DEFAULT_NAME;
-  appData.settings.birthDate = config.birth_date || CFG.DEFAULT_BIRTH;
+  appData.settings.birthDate = config.birth_date || CFG.DEFAULT_BIRTH; appData.settings.dsApiKey = localStorage.getItem('xts_ds_key')||'';
   appData.settings.birthHeight = config.birth_height || 50;
   appData.settings.birthWeight = config.birth_weight || 3.3;
   appData.settings.passcode = config.passcode;
@@ -1491,6 +1491,8 @@ function renderDiary(){
   const birth=appData.settings.birthDate, today=U.today();
   let html='';
 
+  // AI Insights placeholder
+  html+='<div id="dy-insight"></div>';
   // Templates
   html+='<div class="dc-template">'+['✨','💡','💌'].map((ic,i)=>{var tt=['今日第一次','今日趣事','妈妈想对你说'];return'<div class="dc-tpl-btn" onclick="startDiaryTemplate(\''+tt[i]+'\')"><span class="tpl-icon">'+ic+'</span>'+tt[i]+'</div>';}).join('')+'</div>';
 
@@ -1520,6 +1522,8 @@ function renderDiary(){
   html+='</div>';
   $('#page-diary').innerHTML=html;
 
+  // AI insights
+  if(getDSKey()){setTimeout(function(){showDiaryInsights();},300);}
   $$('#page-diary .dc').forEach(function(card){card.addEventListener('click',function(){diaryDetail=card.dataset.id;renderDiary();});});
 }
 
@@ -2088,61 +2092,136 @@ function stopVoice(){
   if(recognition){try{recognition.stop();}catch(e){}}
 }
 
+
+// ============================================================
+//  DEEPSEEK AI ENGINE
+// ============================================================
+const DS_API='https://api.deepseek.com/chat/completions';
+
+function getDSKey(){
+  // Try localStorage first, then app config
+  var k=localStorage.getItem('xts_ds_key');
+  if(k)return k;
+  if(appData&&appData.settings&&appData.settings.dsApiKey)return appData.settings.dsApiKey;
+  return '';
+}
+function setDSKey(k){localStorage.setItem('xts_ds_key',k);}
+
+async function callDeepSeek(prompt,systemPrompt){
+  var key=getDSKey();
+  if(!key)throw new Error('NO_KEY');
+  var res=await fetch(DS_API,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({
+      model:'deepseek-chat',
+      messages:[
+        {role:'system',content:systemPrompt||'你是一个温暖的育儿助手，帮助父母记录宝宝的成长日记。用温馨、细腻的中文写作。'},
+        {role:'user',content:prompt}
+      ],
+      temperature:0.8,max_tokens:1500,stream:false
+    })
+  });
+  if(!res.ok){
+    var err=await res.text();
+    if(res.status===401)throw new Error('API密钥无效，请检查后重试');
+    if(res.status===402)throw new Error('API余额不足');
+    throw new Error('AI请求失败('+res.status+'): '+err.slice(0,100));
+  }
+  var data=await res.json();
+  return data.choices[0].message.content;
+}
+
 async function polishDiaryContent(){
   var textarea=$('#dy-content'), hint=$('#dy-hint');
   var raw=textarea.value.trim();
   if(!raw){hint.textContent='先写点内容再润色哦~';return;}
   var btn=$('#dy-polish');
   btn.textContent='...';btn.disabled=true;
-  hint.textContent='✨ AI正在润色...';
+  hint.textContent='✨ 小桃酥AI正在润色...';
 
-  // Use free prompt-based polish (client-side NLP heuristics as fallback)
-  var polished='';
-
-  // Try AI API first — use a lightweight local heuristic if unavailable
-  // Simple but effective Chinese text polishing:
-  polished=localPolish(raw);
-
-  textarea.value=polished;
-  textarea.scrollTop=textarea.scrollHeight;
-  hint.textContent='✅ AI润色完成';
-  setTimeout(function(){hint.textContent='';},2000);
+  try{
+    if(!getDSKey()){throw new Error('NO_KEY');}
+    var babyName=appData.settings.babyName||'宝宝';
+    var age=U.age(appData.settings.birthDate,U.today());
+    var result=await callDeepSeek(
+      '请帮我把下面的育儿日记润色得更有文采、更温馨流畅。保持第一人称（父母视角），加入适当的emoji。宝宝叫"'+babyName+'"，现在'+age.text+'。\n\n要求：\n1. 保留原意不编造新内容\n2. 自然温馨的语气\n3. 适当分段，每段2-3句话\n4. 关键情绪和事件加emoji点缀\n\n原始日记：\n'+raw,
+      '你是一个温暖、细腻的育儿写作助手。帮助父母润色给宝宝的成长日记。用自然的中文，像朋友聊天一样的口吻，偶尔加一两个合适的emoji。不要过度修饰，保持真实感。'
+    );
+    textarea.value=result;
+    textarea.scrollTop=textarea.scrollHeight;
+    hint.textContent='✅ AI润色完成';
+  }catch(e){
+    if(e.message==='NO_KEY'){
+      // Fallback to local polish
+      textarea.value=localPolish(raw);
+      textarea.scrollTop=textarea.scrollHeight;
+      hint.textContent='💡 已用离线润色，配置API密钥效果更好';
+      // Show gentle prompt to set key
+      setTimeout(function(){
+        if(confirm('想要更好的AI润色效果吗？\n\nDeepSeek提供免费API额度，注册即送500万tokens。\n\n点击确定去获取API密钥')){window.open('https://platform.deepseek.com/api_keys','_blank');}
+      },1000);
+    }else{
+      textarea.value=localPolish(raw);
+      textarea.scrollTop=textarea.scrollHeight;
+      hint.textContent='AI请求失败，已用离线润色: '+e.message.slice(0,50);
+    }
+  }
+  setTimeout(function(){hint.textContent='';},3000);
   btn.textContent='✨';btn.disabled=false;
 }
 
-// Local Chinese text polish (works offline, no API needed)
+// ============================================================
+//  AI SMART INSIGHTS (Diary tab header)
+// ============================================================
+async function generateDiaryInsights(){
+  try{
+    if(!getDSKey())return null;
+    var entries=appData.diaryEntries||[];
+    if(entries.length<3)return null;
+
+    // Get last 10 entries, build summary
+    var recent=entries.sort(function(a,b){return b.date.localeCompare(a.date);}).slice(0,10);
+    var babyName=appData.settings.babyName||'宝宝';
+    var age=U.age(appData.settings.birthDate,U.today());
+    var summary=recent.map(function(e){
+      return '【'+e.date+'】'+e.title+' | 心情:'+e.mood+' | '+e.content.slice(0,100);
+    }).join('\n---\n');
+
+    var result=await callDeepSeek(
+      '以下是"'+babyName+'"(现在'+age.text+')最近的成长日记：\n\n'+summary+'\n\n请用1-3句话总结这段时间的成长亮点和变化趋势（语气温暖，像朋友聊天）。另外如果有值得注意的模式（比如睡眠变化、新技能、情绪变化），也简单提一下。总字数不超过200字。',
+      '你是一个敏锐又温暖的育儿观察者。简洁、有洞察力。'
+    );
+    return result;
+  }catch(e){return null;}
+}
+
+async function showDiaryInsights(){
+  var el=$('#dy-insight'); if(!el)return;
+  el.innerHTML='<div style="font-size:.8rem;color:#BCAAA4;text-align:center;padding:8px">🤖 AI正在分析近期日记...</div>';
+  try{
+    var insight=await generateDiaryInsights();
+    if(insight){
+      el.innerHTML='<div style="background:linear-gradient(135deg,#FFF0EB,#FFE4E8);border-radius:12px;padding:12px 14px;font-size:.85rem;color:#4E342E;line-height:1.6;margin-bottom:12px"><div style="font-weight:600;color:#FF8C69;margin-bottom:4px">🤖 AI育儿洞察</div>'+insight.replace(/\n/g,'<br>')+'</div><div style="font-size:.65rem;color:#BCAAA4;margin-top:4px;text-align:right">由 DeepSeek AI 生成 · 仅供参考</div>';
+    }
+  }catch(e){if(el)el.innerHTML='';}
+}
+
+// Offline fallback polish (used when no API key configured)
 function localPolish(text){
   var result=text;
-
-  // Add emoji for emotional expressions
   result=result.replace(/开心|高兴|快乐/g,function(m){return m+'😊';});
-  result=result.replace(/哭|伤心|难过|心疼/g,function(m){return m+'😢';});
+  result=result.replace(/哭|伤心|难过/g,function(m){return m+'😢';});
   result=result.replace(/可爱|萌|乖/g,function(m){return m+'💕';});
   result=result.replace(/第一次|首次/g,function(m){return '✨'+m;});
-  result=result.replace(/笑|乐/g,function(m){return m+'☺️';});
-  result=result.replace(/睡|睡觉|睡着/g,function(m){return m+'😴';});
-  result=result.replace(/吃|喝|奶/g,function(m){return m+'🍼';});
-  result=result.replace(/拉|便便|尿|💩/g,function(m){return m+'💩';});
-  result=result.replace(/玩|游戏/g,function(m){return m+'🎮';});
-
-  // Add line breaks after sentences
   result=result.replace(/([。！？])\s*/g,'$1\n');
-
-  // Capitalize/add periods where missing (Chinese: insert 。 between paragraphs)
-  result=result.replace(/([a-zA-Z])\s+$/gm,'$1.');
-
-  // Add time marker at start if not present
   if(!result.match(/^(今天|昨天|早上|下午|晚上|刚刚)/)){
     var h=new Date().getHours();
-    var prefix=h<12?'早上':h<18?'下午':'晚上';
-    if(Math.random()<0.3)result=prefix+'，'+result;
+    result=(h<12?'早上':h<18?'下午':'晚上')+'，'+result;
   }
-
-  // Clean extra whitespace
-  result=result.replace(/\n{3,}/g,'\n\n').trim();
-
-  return result;
+  return result.replace(/\n{3,}/g,'\n\n').trim();
 }
+
 
 //  SETTINGS PAGE
 // ============================================================
@@ -2163,7 +2242,7 @@ function editSetting(field){
   const s=appData.settings,labels={babyName:'宝宝名字',birthDate:'生日',birthHeight:'出生身高(cm)',birthWeight:'出生体重(kg)',passcode:'访问密码'};
   let input;
   if(field==='birthDate')input='<input type="date" class="fi" id="sv" value="'+s.birthDate+'" max="'+U.today()+'">';
-  else if(field==='passcode')input='<input type="text" class="fi" id="sv" value="'+s.passcode+'" maxlength="20"><div class="fl" style="margin-top:8px;color:#BCAAA4">修改后需用新密码重新登录</div>';
+  else if(field==='dsApiKey'){input='<input type="text" class="fi" id="sv" value="'+s.dsApiKey+'" placeholder="sk-..."><div class="fl" style="margin-top:8px;color:#BCAAA4">在 <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color:#FF8C69">platform.deepseek.com</a> 免费获取，新用户送500万tokens</div>';} else if(field==='passcode')input='<input type="text" class="fi" id="sv" value="'+s.passcode+'" maxlength="20"><div class="fl" style="margin-top:8px;color:#BCAAA4">修改后需用新密码重新登录</div>';
   else input='<input type="'+(field==='babyName'?'text':'number')+'" class="fi" id="sv" value="'+(field==='babyName'?s.babyName:s[field])+'" '+(field!=='babyName'?'step="0.1"':'')+'>';
 
   showModal('编辑'+labels[field],input,async()=>{
@@ -2171,7 +2250,7 @@ function editSetting(field){
     try{
       const u={};u[field==='babyName'?'baby_name':field==='birthDate'?'birth_date':field==='birthHeight'?'birth_height':field==='birthWeight'?'birth_weight':field==='passcode'?'passcode':field]=field==='birthHeight'||field==='birthWeight'?parseFloat(val):val;
       await API.updateConfig(u);
-      if(field==='babyName'){s.babyName=val;updateTitle();}else if(field==='birthDate')s.birthDate=val;else if(field==='birthHeight')s.birthHeight=parseFloat(val);else if(field==='birthWeight')s.birthWeight=parseFloat(val);else if(field==='passcode'){s.passcode=val;sessionStorage.setItem('xts_pass',val);}
+      if(field==='babyName'){s.babyName=val;updateTitle();}else if(field==='birthDate')s.birthDate=val;else if(field==='birthHeight')s.birthHeight=parseFloat(val);else if(field==='birthWeight')s.birthWeight=parseFloat(val);else if(field==='dsApiKey'){input='<input type="text" class="fi" id="sv" value="'+s.dsApiKey+'" placeholder="sk-..."><div class="fl" style="margin-top:8px;color:#BCAAA4">在 <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color:#FF8C69">platform.deepseek.com</a> 免费获取，新用户送500万tokens</div>';} else if(field==='passcode'){s.passcode=val;sessionStorage.setItem('xts_pass',val);}
       updateAge();toast('已更新','ok');return true;
     }catch(e){toast('更新失败: '+e.message,'err');return false;}
   });
