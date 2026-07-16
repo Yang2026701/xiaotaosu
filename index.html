@@ -1499,6 +1499,18 @@ const CHECKUP_SCHEDULE = [
 // ============================================================
 //  HEALTH PAGE
 // ============================================================
+function renderHealthFiles(r){
+  let html='';
+  try{
+    const paths=JSON.parse(r.filePath||'[]');
+    const names=JSON.parse(r.fileName||'[]');
+    paths.forEach((p,i)=>{html+='<div class="hr-file" onclick="window.open(\''+CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+U.esc(p)+'\',\'_blank\')"><span class="hr-file-icon">📎</span> '+U.esc(names[i]||'附件'+(i+1))+'</div>';});
+  }catch(e){
+    // Legacy single file format
+    html+='<div class="hr-file" onclick="window.open(\''+CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+U.esc(r.filePath)+'\',\'_blank\')"><span class="hr-file-icon">📎</span> '+U.esc(r.fileName||'查看附件')+'</div>';
+  }
+  return html;
+}
 function renderHealth(){
   const records=appData.healthRecords||[];
   const birth=appData.settings.birthDate;
@@ -1566,7 +1578,7 @@ function renderHealth(){
       '<span class="hr-date">'+U.fmtDate(r.date)+' · '+(r.ageDays||0)+'天</span></div>'+
       '<div class="hr-title">'+U.esc(r.title)+'</div>'+
       (r.notes?'<div class="hr-notes">'+U.esc(r.notes)+'</div>':'')+
-      (r.filePath?'<div class="hr-file" onclick="window.open(\''+CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+U.esc(r.filePath)+'\',\'_blank\')"><span class="hr-file-icon">📎</span> '+U.esc(r.fileName||'查看附件')+'</div>':'')+
+      (r.filePath?renderHealthFiles(r):'')+
       (r._source==='record'?'<div class="hr-actions">'+
         '<button class="btn btn-s btn-sm btn-hr-del" data-id="'+r.id+'">删除</button></div>':
         (r._source==='auto'?'<div class="hr-actions">'+
@@ -1595,8 +1607,8 @@ function showHealthForm(){
     '<div class="fg"><label class="fl">标题</label><input type="text" class="fi" id="hr-title" placeholder="例如：五联疫苗第一针"></div>'+
     '<div class="fg"><label class="fl">日期</label><input type="date" class="fi" id="hr-date" value="'+today+'"></div>'+
     '<div class="fg"><label class="fl">备注</label><textarea class="ft" id="hr-notes" rows="2" placeholder="医生建议、反应等..."></textarea></div>'+
-    '<div class="fg"><label class="fl">上传附件（体检报告、疫苗本照片等）</label><input type="file" class="hr-file-input" id="hr-file-upload" accept="*"><button type="button" class="btn btn-s btn-sm" id="hr-file-btn">选择文件</button> <span style="font-size:.75rem;color:#BCAAA4" id="hr-file-name">未选择文件</span></div>';
-  let healthFile=null;
+    '<div class="fg"><label class="fl">上传附件（可多选，PDF/图片/文档等）</label><input type="file" class="hr-file-input" id="hr-file-upload" accept="*" multiple><button type="button" class="btn btn-s btn-sm" id="hr-file-btn">选择文件</button> <span style="font-size:.75rem;color:#BCAAA4" id="hr-file-name">未选择文件</span></div>';
+  let healthFiles=[];
   showModal('添加健康记录',html,async()=>{
     const type=$('#hr-type').value,title=$('#hr-title').value.trim(),date=$('#hr-date').value,notes=$('#hr-notes').value.trim();
     if(!title){toast('请输入标题','err');return false;}
@@ -1604,13 +1616,20 @@ function showHealthForm(){
     const birth=appData.settings.birthDate,ageDays=U.age(birth,date).totalDays;
     const hid=U.genId('h');
     let filePath='',fileName='';
-    // Upload file if selected
-    if(healthFile){
-      const ext=healthFile.name.split('.').pop()||'pdf';
-      const safeName=hid+'.'+ext.replace(/[^a-z0-9]/gi,'');
-      const fd=new FormData();fd.append('file',healthFile,safeName);
-      try{filePath=await uploadFileDirect('health/'+safeName,fd);fileName=healthFile.name;}
-      catch(e){toast('附件上传失败: '+e.message,'err');return false;}
+    // Upload multiple files
+    if(healthFiles.length>0){
+      toast('正在上传'+healthFiles.length+'个文件...','');
+      const uploads=healthFiles.map((f,i)=>{
+        const ext=(f.name.split('.').pop()||'pdf').replace(/[^a-z0-9]/gi,'');
+        const safeName=hid+'_'+i+'.'+ext;
+        const fd=new FormData();fd.append('file',f,safeName);
+        return uploadFileDirect('health/'+safeName,fd).then(p=>({path:p,name:f.name}));
+      });
+      try{
+        const results=await Promise.all(uploads);
+        filePath=JSON.stringify(results.map(r=>r.path));
+        fileName=JSON.stringify(results.map(r=>r.name));
+      }catch(e){toast('附件上传失败: '+e.message,'err');return false;}
     }
     try{await API.addHealth({id:hid,recordType:type,title,date,ageDays,notes,isCompleted:true,filePath,fileName});toast('已添加','ok');celebrate();return true;}
     catch(e){toast('保存失败: '+e.message,'err');return false;}
@@ -1618,7 +1637,7 @@ function showHealthForm(){
     // On modal open, bind file input
     $('#hr-file-btn').addEventListener('click',()=>{$('#hr-file-upload').click();});
     $('#hr-file-upload').addEventListener('change',function(){
-      if(this.files[0]){healthFile=this.files[0];$('#hr-file-name').textContent=healthFile.name+' ('+(healthFile.size/1024).toFixed(0)+'KB)';}
+      if(this.files.length>0){healthFiles=Array.from(this.files);$('#hr-file-name').textContent='已选 '+healthFiles.length+' 个文件 ('+(healthFiles.reduce((s,f)=>s+f.size,0)/1024).toFixed(0)+'KB)';}
     });
   });
 }
