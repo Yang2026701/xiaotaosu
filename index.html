@@ -1606,8 +1606,10 @@ function showHealthForm(){
     let filePath='',fileName='';
     // Upload file if selected
     if(healthFile){
-      const fd=new FormData();fd.append('file',healthFile,hid+'-'+healthFile.name);
-      try{filePath=await uploadFileDirect('health/'+hid+'-'+healthFile.name,fd);fileName=healthFile.name;}
+      const ext=healthFile.name.split('.').pop()||'pdf';
+      const safeName=hid+'.'+ext.replace(/[^a-z0-9]/gi,'');
+      const fd=new FormData();fd.append('file',healthFile,safeName);
+      try{filePath=await uploadFileDirect('health/'+safeName,fd);fileName=healthFile.name;}
       catch(e){toast('附件上传失败: '+e.message,'err');return false;}
     }
     try{await API.addHealth({id:hid,recordType:type,title,date,ageDays,notes,isCompleted:true,filePath,fileName});toast('已添加','ok');celebrate();return true;}
