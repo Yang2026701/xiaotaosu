@@ -1551,7 +1551,7 @@ function renderHealth(){
   html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">';
   html+='<div class="stat-tile"><div style="font-size:1.3rem">💉</div><div class="stat-val">'+vaccineDone+'/'+vaccineTotal+'</div><div class="stat-lbl">疫苗接种</div></div>';
   html+='<div class="stat-tile"><div style="font-size:1.3rem">🏥</div><div class="stat-val">'+completedCount+'</div><div class="stat-lbl">健康记录</div></div>';
-  html+='<div class="stat-tile"><div style="font-size:1.3rem">📅</div><div class="stat-val">'+(dueVaccines.length+dueCheckups.length)+'</div><div class="stat-lbl">近期待办</div></div>';
+  html+='<div class="stat-tile" style="cursor:pointer" id="pending-tile"><div style="font-size:1.3rem">📅</div><div class="stat-val">'+(dueVaccines.length+dueCheckups.length)+'</div><div class="stat-lbl">近期待办</div></div>';
   html+='</div>';
 
   // Timeline
@@ -1594,6 +1594,7 @@ function renderHealth(){
 
   // Bind events
   $('#hr-add')?.addEventListener('click',showHealthForm);
+  $('#pending-tile')?.addEventListener('click',()=>showPendingList(dueVaccines,dueCheckups,records));
   $$('.btn-hr-del').forEach(b=>{b.addEventListener('click',e=>{e.stopPropagation();confirm('确定删除？',async()=>{await API.deleteHealth(b.dataset.id);toast('已删除','ok');reloadData().then(()=>renderPage());});});});
   $$('.btn-hr-done').forEach(b=>{b.addEventListener('click',async e=>{e.stopPropagation();
     const h={id:U.genId('h'),recordType:b.dataset.type||'vaccine',title:b.dataset.v,date:U.today(),ageDays:parseInt(b.dataset.days)||0,notes:'',isCompleted:true};
@@ -1601,6 +1602,31 @@ function renderHealth(){
   });});
 }
 
+function showPendingList(dueVaccines,dueCheckups,records){
+  const birth=appData.settings.birthDate;
+  const birthD=new Date(birth+'T00:00:00');
+  let html='';
+  if(dueVaccines.length>0){
+    html+='<h3 style="font-size:.9rem;color:#FF8C69;margin-bottom:8px">💉 近期需接种疫苗 ('+dueVaccines.length+'项)</h3>';
+    dueVaccines.slice(0,8).forEach(v=>{
+      const dl=v.days-elapsed;
+      const targetDate=new Date(birthD.getTime()+v.days*86400000).toISOString().slice(0,10);
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F0E8E0"><div><span style="font-size:.9rem">'+v.v+'</span><span style="font-size:.7rem;color:#BCAAA4;margin-left:8px">建议'+v.days+'天</span></div><span style="font-size:.8rem;font-weight:500;color:'+(dl<=0?'#EF9A9A':'#FF8C69')+'">'+(dl<=0?'已超期'+(Math.abs(dl))+'天':dl+'天后')+'</span></div>';
+    });
+  }
+  if(dueCheckups.length>0){
+    html+='<h3 style="font-size:.9rem;color:#81C784;margin:16px 0 8px">🏥 近期建议体检 ('+dueCheckups.length+'项)</h3>';
+    dueCheckups.slice(0,8).forEach(v=>{
+      const dl=v.days-elapsed;
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F0E8E0"><div><span style="font-size:.9rem">'+v.v+'</span><span style="font-size:.7rem;color:#BCAAA4;margin-left:8px">建议'+v.days+'天</span></div><span style="font-size:.8rem;font-weight:500;color:'+(dl<=0?'#EF9A9A':'#8D6E63')+'">'+(dl<=0?'已超期'+(Math.abs(dl))+'天':dl+'天后')+'</span></div>';
+    });
+  }
+  if(dueVaccines.length===0&&dueCheckups.length===0){
+    html='<div style="text-align:center;padding:24px;color:#81C784">✅ 暂无待办，很棒！</div>';
+  }
+  html+='<div style="font-size:.7rem;color:#BCAAA4;margin-top:12px;text-align:center">注：建议仅供参考，请遵医嘱</div>';
+  showModal('📅 近期待办',html,()=>true);
+}
 function showHealthForm(){
   const today=U.today();
   const html='<div class="fg"><label class="fl">类型</label><select class="fi" id="hr-type"><option value="vaccine">💉 疫苗接种</option><option value="checkup">🏥 体检</option><option value="illness">🤒 生病</option><option value="medication">💊 用药</option></select></div>'+
