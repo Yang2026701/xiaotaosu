@@ -2228,7 +2228,7 @@ function localPolish(text){
 function renderSettings(){
   const s=appData.settings;
   let html='<div class="ss"><h3>宝宝信息</h3><div class="sc">'+sr('名字',U.esc(s.babyName),'babyName')+sr('生日',U.fmtDate(s.birthDate),'birthDate')+sr('出生身高',s.birthHeight+' cm','birthHeight')+sr('出生体重',s.birthWeight+' kg','birthWeight')+'</div></div>';
-  html+='<div class="ss"><h3>安全设置</h3><div class="sc">'+sr('访问密码','••••••','passcode')+'</div></div>';
+  html+='<div class="ss"><h3>安全设置</h3><div class="sc">'+sr('访问密码','••••••','passcode')+sr('DeepSeek API',appData.settings.dsApiKey?'••••••'+appData.settings.dsApiKey.slice(-4):'未设置','dsApiKey')+'</div></div>';
   html+='<div class="ss"><h3>关于</h3><div class="sc"><div class="sr"><span class="sr-label">存储方式</span><span class="sr-val">Supabase 云端</span></div><div class="sr"><span class="sr-label">数据互通</span><span class="sr-val">手机·电脑·iPad</span></div></div></div>';
   html+='<div style="text-align:center;margin:32px 0;color:#BCAAA4;font-size:12px">🍑 小桃酥的成长记录 · 云端版</div>';
   $('#page-settings').innerHTML=html;
@@ -2248,9 +2248,9 @@ function editSetting(field){
   showModal('编辑'+labels[field],input,async()=>{
     const val=$('#sv').value;if(!val)return false;
     try{
-      const u={};u[field==='babyName'?'baby_name':field==='birthDate'?'birth_date':field==='birthHeight'?'birth_height':field==='birthWeight'?'birth_weight':field==='passcode'?'passcode':field]=field==='birthHeight'||field==='birthWeight'?parseFloat(val):val;
+      const u={};u[field==='babyName'?'baby_name':field==='birthDate'?'birth_date':field==='birthHeight'?'birth_height':field==='birthWeight'?'birth_weight':field==='passcode'?'passcode':field==='dsApiKey'?'ds_api_key':field]=field==='birthHeight'||field==='birthWeight'?parseFloat(val):val;
       await API.updateConfig(u);
-      if(field==='babyName'){s.babyName=val;updateTitle();}else if(field==='birthDate')s.birthDate=val;else if(field==='birthHeight')s.birthHeight=parseFloat(val);else if(field==='birthWeight')s.birthWeight=parseFloat(val);else if(field==='dsApiKey'){input='<input type="text" class="fi" id="sv" value="'+s.dsApiKey+'" placeholder="sk-..."><div class="fl" style="margin-top:8px;color:#BCAAA4">在 <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color:#FF8C69">platform.deepseek.com</a> 免费获取，新用户送500万tokens</div>';} else if(field==='passcode'){s.passcode=val;sessionStorage.setItem('xts_pass',val);}
+      if(field==='babyName'){s.babyName=val;updateTitle();}else if(field==='birthDate')s.birthDate=val;else if(field==='birthHeight')s.birthHeight=parseFloat(val);else if(field==='birthWeight')s.birthWeight=parseFloat(val);else if(field==='dsApiKey'){s.dsApiKey=val;setDSKey(val);} else if(field==='passcode'){s.passcode=val;sessionStorage.setItem('xts_pass',val);}
       updateAge();toast('已更新','ok');return true;
     }catch(e){toast('更新失败: '+e.message,'err');return false;}
   });
