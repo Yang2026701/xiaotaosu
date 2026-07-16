@@ -180,8 +180,12 @@ input:focus,textarea:focus,select:focus{outline:none}
 .lb-cap{padding:16px;color:#fff;text-align:center}
 .lb-cap .ltitle{font-size:1rem;font-weight:500}
 .lb-cap .ldate{font-size:.875rem;color:rgba(255,255,255,.6)}
-.lb-acts{display:flex;gap:16px;justify-content:center;padding:0 16px 24px}
-.lb-acts button{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:1.25rem}
+.lb-acts{display:flex;gap:12px;justify-content:center;padding:0 16px 24px}
+.lb-acts button{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:1.1rem;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer}
+.lb-acts button:active{background:rgba(255,255,255,.25)}
+
+/* Lightbox description */
+.lb-desc{font-size:.8rem;color:rgba(255,255,255,.5);margin-top:4px;max-width:280px;margin-left:auto;margin-right:auto}
 
 /* Milestone */
 .ms-sum{display:flex;gap:16px;margin-bottom:24px}
@@ -417,7 +421,7 @@ const API = {
     return{id:r.id,title:r.title||'',description:r.description||'',date:r.photo_date,isVideo:!!r.is_video,dataUrl:r.storage_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.storage_path:'',thumbnailDataUrl:r.thumb_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.thumb_path:r.storage_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.storage_path:'',tags:r.tags||[],favorite:r.favorite||false,originalSize:r.original_size||0};
   },
   addPhoto(p) { return this._fetch('POST','/rest/v1/photos',{id:p.id,title:p.title,description:p.description,photo_date:p.date,storage_path:p._sp,thumb_path:p._tp,tags:p.tags,favorite:p.favorite,original_size:p.originalSize,is_video:!!p.isVideo}); },
-  updatePhoto(id,u) { const r={};if(u.favorite!==undefined)r.favorite=u.favorite;if(u.title!==undefined)r.title=u.title;if(u.tags!==undefined)r.tags=u.tags;return this._fetch('PATCH','/rest/v1/photos?id=eq.'+encodeURIComponent(id),r); },
+  updatePhoto(id,u) { const r={};if(u.favorite!==undefined)r.favorite=u.favorite;if(u.title!==undefined)r.title=u.title;if(u.description!==undefined)r.description=u.description;if(u.tags!==undefined)r.tags=u.tags;return this._fetch('PATCH','/rest/v1/photos?id=eq.'+encodeURIComponent(id),r); },
   async deletePhoto(id) {
     try{const d=await this._fetch('GET','/rest/v1/photos?id=eq.'+encodeURIComponent(id)+'&select=storage_path,thumb_path');if(d&&d[0]){const ps=[d[0].storage_path];if(d[0].thumb_path)ps.push(d[0].thumb_path);await fetch(CFG.SUPABASE_URL+'/storage/v1/object/'+CFG.BUCKET+'?'+ps.map(p=>'paths='+encodeURIComponent(p)).join('&'),{method:'DELETE',headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}}).catch(()=>{});}}catch(e){}
     return this._fetch('DELETE','/rest/v1/photos?id=eq.'+encodeURIComponent(id));
@@ -1117,6 +1121,24 @@ function showPhotoForm(pid,pp,tp,isVideo) {
   });
 }
 
+// Edit media title & description from lightbox
+function showEditMediaForm(cur, onUpdated){
+  const html='<div class="fg"><label class="fl">标题</label><input type="text" class="fi" id="em-title" value="'+U.esc(cur.title||'')+'" placeholder="给'+ (cur.isVideo?'视频':'照片')+'取个名字"></div>'+
+    '<div class="fg"><label class="fl">描述</label><textarea class="ft" id="em-desc" rows="3" placeholder="写下这一刻的故事...">'+U.esc(cur.description||'')+'</textarea></div>';
+  showModal('编辑'+(cur.isVideo?'视频':'照片'),html,async()=>{
+    const title=$('#em-title').value.trim(),desc=$('#em-desc').value.trim();
+    try{
+      await API.updatePhoto(cur.id,{title,description:desc});
+      cur.title=title;cur.description=desc;
+      const photo=appData.photos.find(x=>x.id===cur.id);
+      if(photo){photo.title=title;photo.description=desc;}
+      toast('已更新','ok');
+      if(onUpdated)onUpdated(); // Re-render lightbox
+      return true;
+    }catch(e){toast('更新失败: '+e.message,'err');return false;}
+  });
+}
+
 // ============================================================
 //  ALBUM PAGE
 // ============================================================
@@ -1162,11 +1184,12 @@ function showLightbox(photos,p){
     const mediaHtml=cur.isVideo
       ? '<video class="lb-video" src="'+cur.dataUrl+'" controls playsinline autoplay style="max-width:100%;max-height:70vh;border-radius:6px;outline:none"></video>'
       : '<img src="'+cur.dataUrl+'" alt="'+U.esc(cur.title||'')+'">';
-    ov.innerHTML='<button class="lb-close">✕</button>'+(idx>0?'<button class="lb-nav lb-prev">◀</button>':'')+(idx<photos.length-1?'<button class="lb-nav lb-next">▶</button>':'')+'<div class="lb-img">'+mediaHtml+'</div><div class="lb-cap"><div class="ltitle">'+(cur.isVideo?'🎬 ':'')+U.esc(cur.title||'无标题')+'</div><div class="ldate">'+U.fmtDate(cur.date)+' · '+(idx+1)+'/'+photos.length+'</div></div><div class="lb-acts"><button id="lb-fav">'+(cur.favorite?'⭐':'☆')+'</button><button id="lb-del">🗑️</button></div>';
+    ov.innerHTML='<button class="lb-close">✕</button>'+(idx>0?'<button class="lb-nav lb-prev">◀</button>':'')+(idx<photos.length-1?'<button class="lb-nav lb-next">▶</button>':'')+'<div class="lb-img">'+mediaHtml+'</div><div class="lb-cap"><div class="ltitle">'+(cur.isVideo?'🎬 ':'')+U.esc(cur.title||'无标题')+'</div>'+(cur.description?'<div class="lb-desc">'+U.esc(cur.description)+'</div>':'')+'<div class="ldate">'+U.fmtDate(cur.date)+' · '+(idx+1)+'/'+photos.length+'</div></div><div class="lb-acts"><button id="lb-edit" title="编辑">✏️</button><button id="lb-fav" title="'+(cur.favorite?'取消收藏':'收藏')+'">'+(cur.favorite?'⭐':'☆')+'</button><button id="lb-del" title="删除">🗑️</button></div>';
     ov.querySelector('.lb-close').onclick=close;
     ov.querySelector('.lb-close').onclick=close;
     const pv=ov.querySelector('.lb-prev');if(pv)pv.onclick=()=>{idx--;ri();};
     const nx=ov.querySelector('.lb-next');if(nx)nx.onclick=()=>{idx++;ri();};
+    ov.querySelector('#lb-edit').onclick=()=>{showEditMediaForm(cur,ri);};
     ov.querySelector('#lb-fav').onclick=async()=>{cur.favorite=!cur.favorite;await API.updatePhoto(cur.id,{favorite:cur.favorite});const photo=appData.photos.find(x=>x.id===cur.id);if(photo)photo.favorite=cur.favorite;ri();};
     ov.querySelector('#lb-del').onclick=()=>{confirm('确定删除这张照片吗？',async()=>{await API.deletePhoto(cur.id);toast('已删除','ok');close();reloadData().then(()=>renderPage());});};
   }
