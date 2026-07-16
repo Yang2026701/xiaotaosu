@@ -224,6 +224,30 @@ input:focus,textarea:focus,select:focus{outline:none}
 .dc-tag{font-size:.75rem;color:#FF8C69;background:#FFEDE6;padding:2px 8px;border-radius:50px}
 .detail-h{margin-bottom:24px}
 .detail-content{font-size:1rem;line-height:1.8;white-space:pre-wrap;margin-bottom:24px}
+/* Parenting Guide */
+.pg-progress{background:#FFF0EB;border-radius:16px;padding:16px;margin-bottom:20px;border:1px solid rgba(255,160,122,.15)}
+.pg-progress-bar{height:8px;border-radius:4px;background:#FFDDD1;margin-top:8px;overflow:hidden}
+.pg-progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#FFA07A,#FF8C69);transition:width .5s}
+.pg-stage-card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;border:1px solid #F0E8E0;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.pg-stage-card.active{border-color:#FFA07A;box-shadow:0 4px 16px rgba(255,160,122,.12)}
+.pg-stage-card.locked{opacity:.5;background:#FAFAFA;pointer-events:none}
+.pg-stage-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:4px 0}
+.pg-stage-title{font-size:1rem;font-weight:600}
+.pg-stage-age{font-size:.8rem;color:#BCAAA4}
+.pg-stage-badge{font-size:.7rem;padding:2px 8px;border-radius:10px;font-weight:500}
+.pg-stage-badge.current{background:#FFEDE6;color:#FF8C69}
+.pg-stage-badge.done{background:#E8F5E9;color:#66BB6A}
+.pg-stage-badge.upcoming{background:#F5F5F5;color:#BCAAA4}
+.pg-cat{margin-top:12px}
+.pg-cat-title{font-size:.8rem;font-weight:600;color:#BCAAA4;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.pg-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #F5F3F0}
+.pg-item:last-child{border-bottom:none}
+.pg-check{width:22px;height:22px;border-radius:50%;border:2px solid #DDD;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;cursor:pointer;transition:all .15s;margin-top:1px}
+.pg-check.done{background:#81C784;border-color:#81C784;color:#fff}
+.pg-check:active{transform:scale(1.2)}
+.pg-item-text{flex:1;font-size:.9rem;line-height:1.5}
+.pg-item-tip{font-size:.75rem;color:#BCAAA4;margin-top:2px}
+.pg-stage-toggle{font-size:.8rem;color:#FF8C69;cursor:pointer}
 
 /* Health module */
 .health-ai{background:linear-gradient(135deg,#FFF0EB,#FFE4E8);border-radius:16px;padding:16px;margin-bottom:24px;border:1px solid rgba(255,160,122,.2)}
@@ -371,6 +395,7 @@ input:focus,textarea:focus,select:focus{outline:none}
     <section id="page-milestones" class="page" hidden></section>
     <section id="page-growth" class="page" hidden></section>
     <section id="page-diary" class="page" hidden></section>
+    <section id="page-parenting" class="page" hidden></section>
     <section id="page-health" class="page" hidden></section>
     <section id="page-settings" class="page" hidden></section>
   </main>
@@ -380,6 +405,7 @@ input:focus,textarea:focus,select:focus{outline:none}
     <button class="tab" data-tab="milestones"><span class="ti">🏆</span>成长</button>
     <button class="tab" data-tab="growth"><span class="ti">📊</span>发育</button>
     <button class="tab" data-tab="diary"><span class="ti">📝</span>日记</button>
+    <button class="tab" data-tab="parenting"><span class="ti">📚</span>育儿</button>
     <button class="tab" data-tab="health"><span class="ti">🩺</span>健康</button>
   </nav>
 
@@ -492,7 +518,9 @@ const API = {
   getHealth() { return this._fetch('GET','/rest/v1/health_records?select=*&order=record_date.asc').then(d=>(d||[]).map(r=>({id:r.id,recordType:r.record_type,title:r.title,date:r.record_date,ageDays:r.age_days,notes:r.notes,isCompleted:r.is_completed,filePath:r.file_path||'',fileName:r.file_name||''}))); },
   addHealth(h) { return this._fetch('POST','/rest/v1/health_records',{id:h.id,record_type:h.recordType,title:h.title,record_date:h.date,age_days:h.ageDays,notes:h.notes,is_completed:h.isCompleted,file_path:h.filePath||'',file_name:h.fileName||''}); },
   updateHealth(id,u) { const r={};if(u.isCompleted!==undefined)r.is_completed=u.isCompleted;if(u.title!==undefined)r.title=u.title;if(u.date!==undefined)r.record_date=u.date;if(u.notes!==undefined)r.notes=u.notes;if(u.filePath!==undefined)r.file_path=u.filePath;if(u.fileName!==undefined)r.file_name=u.fileName;return this._fetch('PATCH','/rest/v1/health_records?id=eq.'+encodeURIComponent(id),r); },
-  deleteHealth(id) { return this._fetch('DELETE','/rest/v1/health_records?id=eq.'+encodeURIComponent(id)); }
+  deleteHealth(id) { return this._fetch('DELETE','/rest/v1/health_records?id=eq.'+encodeURIComponent(id)); },
+  getParenting() { return this._fetch('GET','/rest/v1/parenting_checks?select=*').then(d=>(d||[])); },
+  saveParentingCheck(stageKey,itemKey,completed) { if(completed) return this._fetch('POST','/rest/v1/parenting_checks',{id:stageKey+'_'+itemKey,stage_key:stageKey,item_key:itemKey,completed:true,completed_at:new Date().toISOString()}); else return this._fetch('DELETE','/rest/v1/parenting_checks?id=eq.'+encodeURIComponent(stageKey+'_'+itemKey)); }
 };
 
 // ---- Models ----
@@ -511,7 +539,7 @@ const WHO_GIRLS=[[0,45.6,49.1,52.9,2.4,3.2,4.2],[1,49.9,53.7,57.4,3.2,4.2,5.4],[
 // ============================================================
 //  App State
 // ============================================================
-let appData = { settings: { babyName: CFG.DEFAULT_NAME, birthDate: CFG.DEFAULT_BIRTH, birthHeight: 50, birthWeight: 3.3, passcode: CFG.DEFAULT_PASSCODE }, photos: [], milestones: [], growthRecords: [], diaryEntries: [], healthRecords: [] };
+let appData = { settings: { babyName: CFG.DEFAULT_NAME, birthDate: CFG.DEFAULT_BIRTH, birthHeight: 50, birthWeight: 3.3, passcode: CFG.DEFAULT_PASSCODE }, photos: [], milestones: [], growthRecords: [], diaryEntries: [], healthRecords: [], parentingChecks: [] };
 let activeTab = 'album';
 let isFirstRun = true;
 let heightChart = null, weightChart = null;
@@ -621,7 +649,7 @@ async function enterApp(config) {
     // Load data
     try {
       const [photos, milestones, growth, diary, health] = await Promise.all([
-        API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[])
+        API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[]), API.getParenting().catch(()=>[])
       ]);
       appData.photos = photos;
       appData.milestones = milestones;
@@ -846,7 +874,7 @@ function setupMainApp() {
   updateAge();
 
   const hash = location.hash.replace('#','');
-  activeTab = ['album','milestones','growth','diary','health','settings'].includes(hash) ? hash : 'album';
+  activeTab = ['album','milestones','growth','diary','parenting','health','settings'].includes(hash) ? hash : 'album';
   location.hash = activeTab;
   navigate(activeTab);
 
@@ -857,7 +885,7 @@ function setupMainApp() {
 
   window.addEventListener('hashchange', async () => {
     const tab = location.hash.replace('#','');
-    if (['album','milestones','growth','diary','health','settings'].includes(tab)) {
+    if (['album','milestones','growth','diary','parenting','health','settings'].includes(tab)) {
       await reloadData();
       navigate(tab);
     }
@@ -880,10 +908,10 @@ function setupMainApp() {
 async function reloadData() {
   try {
     const [photos, milestones, growth, diary, health] = await Promise.all([
-      API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[])
+      API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[]), API.getParenting().catch(()=>[])
     ]);
     appData.photos = photos; appData.milestones = milestones;
-    appData.growthRecords = growth; appData.diaryEntries = diary; appData.healthRecords = health||[]; appData.healthRecords = health||[];
+    appData.growthRecords = growth; appData.diaryEntries = diary; appData.healthRecords = health||[]; appData.parentingChecks = parenting||[]; appData.parentingChecks = parenting||[];
   } catch (e) { console.error('Reload error:', e); }
 }
 
@@ -905,6 +933,7 @@ function renderPage() {
     case'milestones':renderMilestones();break;
     case'growth':renderGrowth();break;
     case'diary':renderDiary();break;
+    case'parenting':renderParenting();break;
     case'health':renderHealth();break;
     case'settings':renderSettings();break;
   }
@@ -1669,6 +1698,333 @@ function showHealthForm(){
   });
 }
 
+// ============================================================
+//  PARENTING GUIDE — 育儿宝典
+//  Sources: 浙江省科学育儿指导服务手册 + WHO/中国卫健委指南
+// ============================================================
+const PARENTING_STAGES = [
+  { key:'0-1', title:'新生儿期', ageRange:'0-1月龄', months:1, icon:'👶', 
+    items:[
+      {cat:'🩺 健康管理',items:[
+        {key:'nb_checkup',text:'出生后42天完成新生儿体检',tip:'包括听力筛查、先天性心脏病筛查、髋关节B超等'},
+        {key:'nb_vaccine',text:'接种乙肝疫苗第1针和卡介苗',tip:'出生24小时内接种'},
+        {key:'nb_jaundice',text:'观察新生儿黄疸，学会判断生理性/病理性黄疸',tip:'眼白黄染、手心脚心黄染需立即就医'},
+        {key:'nb_screening',text:'完成新生儿疾病筛查（足跟血）',tip:'出生后3-7天采血，筛查甲低、苯丙酮尿症等'},
+        {key:'nb_vitk',text:'了解并接受维生素K1注射',tip:'预防新生儿出血症'},
+      ]},
+      {cat:'🍽️ 喂养营养',items:[
+        {key:'nb_bf_early',text:'出生后1小时内开始母乳喂养',tip:'早接触、早吸吮、早开奶'},
+        {key:'nb_bf_freq',text:'按需哺乳，每天8-12次',tip:'不设时间限制，宝宝饿了就喂'},
+        {key:'nb_bf_signs',text:'学会判断宝宝吃饱的信号',tip:'每天6次以上湿尿布、体重增长好、哺乳后乳房变软'},
+        {key:'nb_burp',text:'每次喂奶后拍嗝',tip:'竖抱15-20分钟，轻拍背部至打嗝'},
+        {key:'nb_vitd',text:'出生后2周开始补充维生素D',tip:'每天400IU，持续至2岁'},
+      ]},
+      {cat:'😴 睡眠与护理',items:[
+        {key:'nb_sleep_pos',text:'采用仰卧位睡眠，不用枕头',tip:'降低婴儿猝死综合征(SIDS)风险'},
+        {key:'nb_umbilical',text:'掌握脐部护理方法，保持干燥',tip:'75%酒精或碘伏消毒，每天1-2次至脱落'},
+        {key:'nb_bath',text:'学会正确给新生儿洗澡',tip:'室温26-28°C，水温38-40°C，时间不超过10分钟'},
+        {key:'nb_swaddle',text:'适度包裹(襁褓法)助眠',tip:'上肢包裹、下肢自由，满月后逐步解除'},
+      ]},
+      {cat:'🧠 早期发展',items:[
+        {key:'nb_tummy',text:'每天2-3次俯卧抬头练习',tip:'从1-2分钟开始，在宝宝清醒时进行，家长全程看护'},
+        {key:'nb_visual',text:'用黑白卡进行追视训练',tip:'距离20-30cm，缓慢移动，每天3-5分钟'},
+        {key:'nb_talk',text:'多对宝宝说话、唱歌',tip:'面部表情丰富，语调温柔，这是语言发展的基础'},
+        {key:'nb_skin',text:'每天做抚触按摩',tip:'喂奶后1小时，室温26°C以上，从轻到重'},
+      ]},
+    ]
+  },
+  { key:'1-2', title:'二月龄', ageRange:'1-2月龄', months:2, icon:'🍼',
+    items:[
+      {cat:'🩺 健康管理',items:[
+        {key:'2m_vaccine',text:'接种乙肝疫苗第2针（满月后）',tip:'出生后30-60天内'},
+        {key:'2m_checkup',text:'完成满月体检',tip:'测量身高体重头围，评估生长发育'},
+      ]},
+      {cat:'🏋️ 身体发育',items:[
+        {key:'2m_head',text:'俯卧时能抬头45度',tip:'每天累计俯卧时间不少于30分钟'},
+        {key:'2m_follow',text:'眼睛能追随移动的物体',tip:'用色彩鲜艳的玩具缓慢移动观察宝宝追视'},
+        {key:'2m_smile',text:'出现社会性微笑',tip:'对大人的脸和声音有微笑反应'},
+        {key:'2m_coo',text:'发出"咕咕"的喉音',tip:'多回应宝宝的发音，进行"对话"'},
+      ]},
+      {cat:'🍽️ 喂养营养',items:[
+        {key:'2m_bf_continue',text:'坚持纯母乳喂养',tip:'此阶段生长最快，保证充分喂养'},
+        {key:'2m_growth',text:'监测体重增长：每天约增25-30g',tip:'每月增重约800-1000g'},
+        {key:'2m_reflux',text:'了解并应对婴儿溢奶/吐奶',tip:'喂奶后竖抱20分钟，不要立即平躺'},
+      ]},
+      {cat:'😴 睡眠作息',items:[
+        {key:'2m_sleep_total',text:'每天睡眠总时长14-17小时',tip:'开始形成昼夜节律'},
+        {key:'2m_sleep_routine',text:'建立睡前程序（洗澡→按摩→喂奶→哄睡）',tip:'固定流程帮助宝宝建立安全感'},
+      ]},
+      {cat:'🧠 早期发展',items:[
+        {key:'2m_grasp',text:'手掌开始有抓握反射',tip:'放手指在宝宝掌心，感受抓握'},
+        {key:'2m_face',text:'面对面互动，做夸张表情',tip:'距离20-30cm，模仿宝宝的表情'},
+        {key:'2m_mobile',text:'挂床铃/摇铃刺激听觉视觉',tip:'选择柔和声音的摇铃，距离眼睛30cm以上'},
+      ]},
+    ]
+  },
+  { key:'2-3', title:'三月龄', ageRange:'2-3月龄', months:3, icon:'😊',
+    items:[
+      {cat:'🩺 健康管理',items:[
+        {key:'3m_vaccine',text:'接种脊灰疫苗第1针+百白破第1针（2月龄）',tip:'出生后60天左右'},
+      ]},
+      {cat:'🏋️ 身体发育',items:[
+        {key:'3m_head90',text:'俯卧抬头可达90度',tip:'用玩具引诱抬头，锻炼颈部和背部肌肉'},
+        {key:'3m_hands',text:'开始看自己的手，双手能在胸前互握',tip:'这是自我认知的开始'},
+        {key:'3m_kick',text:'仰卧时双腿有力蹬踢',tip:'让宝宝光腿蹬踢，锻炼下肢力量'},
+      ]},
+      {cat:'🍽️ 喂养营养',items:[
+        {key:'3m_bf_pattern',text:'哺乳逐渐形成规律，间隔2-3小时',tip:'每天6-8次'},
+        {key:'3m_growth2',text:'体重约为出生时的2倍',tip:'男婴约6-7kg，女婴约5.5-6.5kg'},
+      ]},
+      {cat:'😴 睡眠作息',items:[
+        {key:'3m_nap',text:'白天小睡3-4次',tip:'每次1-2小时'},
+        {key:'3m_night',text:'夜间睡眠延长至5-6小时',tip:'部分宝宝开始能睡整觉'},
+      ]},
+      {cat:'🧠 早期发展',items:[
+        {key:'3m_laugh',text:'逗引时能笑出声',tip:'多玩躲猫猫等互动游戏'},
+        {key:'3m_sound',text:'听到声音会转头寻找声源',tip:'在宝宝耳边不同方向发出声音'},
+        {key:'3m_rattle',text:'能握住摇铃几秒钟',tip:'选择轻便易抓握的摇铃'},
+        {key:'3m_mirror',text:'对镜中自己的影像感兴趣',tip:'安全的婴儿镜，促进自我认知'},
+      ]},
+    ]
+  },
+  { key:'3-4', title:'四月龄', ageRange:'3-4月龄', months:4, icon:'🔄',
+    items:[
+      {cat:'🩺 健康管理',items:[
+        {key:'4m_vaccine',text:'接种脊灰第2针+百白破第2针（3-4月龄）',tip:'出生后90-120天'},
+      ]},
+      {cat:'🏋️ 身体发育',items:[
+        {key:'4m_roll',text:'能从仰卧翻到侧卧',tip:'这是翻身的开始，注意防护防止坠落'},
+        {key:'4m_chest',text:'俯卧时可用手肘支撑抬起胸部',tip:'每次练习5-10分钟'},
+        {key:'4m_grasp2',text:'会伸手抓面前的玩具',tip:'提供颜色鲜艳、会响的玩具引导抓握'},
+      ]},
+      {cat:'🍽️ 喂养营养',items:[
+        {key:'4m_bf_maintain',text:'继续纯母乳喂养',tip:'不早于4个月添加辅食'},
+        {key:'4m_teething',text:'可能出现流口水增多、喜欢咬东西',tip:'准备安全的牙胶，注意口腔卫生'},
+      ]},
+      {cat:'😴 睡眠作息',items:[
+        {key:'4m_regression',text:'了解4月龄睡眠倒退期',tip:'暂时的睡眠倒退是正常的，保持一致的睡前程序'},
+        {key:'4m_self_soothe',text:'开始培养自主入睡能力',tip:'在宝宝困但醒着时放下'},
+      ]},
+      {cat:'🧠 早期发展',items:[
+        {key:'4m_name',text:'叫名字有反应',tip:'经常用温柔语气叫宝宝名字'},
+        {key:'4m_emotion',text:'能分辨大人的不同表情和语气',tip:'用夸张的表情帮助宝宝理解情绪'},
+        {key:'4m_book',text:'开始亲子阅读',tip:'选择布书或硬板书，每天5-10分钟'},
+      ]},
+    ]
+  },
+  { key:'4-6', title:'5-6月龄', ageRange:'4-6月龄', months:6, icon:'🥄',
+    items:[
+      {cat:'🩺 健康管理',items:[
+        {key:'6m_vaccine1',text:'接种乙肝第3针+百白破第3针+脊灰第3针+流脑A群第1针（6月龄）',tip:'第6个月是疫苗密集期，提前安排'},
+        {key:'6m_checkup',text:'完成6月龄体检',tip:'评估发育里程碑、贫血筛查'},
+      ]},
+      {cat:'🏋️ 身体发育',items:[
+        {key:'6m_sit',text:'能独坐片刻（靠坐→独坐）',tip:'坐不稳时周围放软垫保护'},
+        {key:'6m_crawl_prep',text:'出现匍匐爬行动作',tip:'多创造地面活动空间，少用学步车'},
+        {key:'6m_teeth',text:'第一颗乳牙萌出（下中切牙）',tip:'开始用指套牙刷清洁'},
+      ]},
+      {cat:'🍽️ 喂养营养',items:[
+        {key:'6m_solid_start',text:'开始添加辅食（满6月龄）',tip:'从高铁米粉开始，由稀到稠、由少到多、由单一到多样'},
+        {key:'6m_solid_order',text:'辅食添加顺序：米粉→蔬菜泥→水果泥→蛋黄→肉泥',tip:'每种新食物观察3-5天，注意过敏反应'},
+        {key:'6m_iron',text:'保证铁的摄入',tip:'强化铁的米粉、红肉泥、肝泥是良好的铁来源'},
+        {key:'6m_water',text:'开始用小勺喝水',tip:'练习用杯子，为戒奶瓶做准备'},
+      ]},
+      {cat:'😴 睡眠作息',items:[
+        {key:'6m_sleep_2nap',text:'白天小睡减少至2-3次',tip:'逐渐形成"上午-下午"两次小睡节奏'},
+        {key:'6m_bedtime',text:'固定晚上入睡时间（建议19:30-20:30）',tip:'规律的生物钟比睡眠时长更重要'},
+      ]},
+      {cat:'🧠 早期发展',items:[
+        {key:'6m_respond',text:'能辨认熟悉的人，对陌生人表现警惕',tip:'认生是认知发展的正常标志'},
+        {key:'6m_pass',text:'会双手传递玩具',tip:'给不同形状的玩具练习手部灵活度'},
+        {key:'6m_babble',text:'咿呀学语，发出重复音节如"ba-ba""ma-ma"',tip:'多回应宝宝的发音，这是语言的萌芽'},
+      ]},
+    ]
+  },
+  { key:'6-9', title:'7-9月龄', ageRange:'6-9月龄', months:9, icon:'🐛',
+    items:[
+      {cat:'🩺 健康管理',items:[
+        {key:'9m_vaccine1',text:'接种麻腮风第1针+乙脑减毒第1针（8月龄）',tip:'出生后约240天'},
+        {key:'9m_checkup',text:'完成9月龄体检',tip:'包括发育筛查、视力筛查'},
+      ]},
+      {cat:'🏋️ 身体发育',items:[
+        {key:'9m_crawl',text:'能手膝爬行',tip:'创造安全的爬行空间，每天爬行时间不少于1小时'},
+        {key:'9m_sit_well',text:'独坐稳当，能自己从躺到坐',tip:'多鼓励自主变换体位'},
+        {key:'9m_pull_up',text:'能扶着东西站起来',tip:'提供稳固的低矮家具让宝宝练习'},
+        {key:'9m_pincer',text:'开始出现拇食指对捏（钳式抓握）',tip:'准备小泡芙或溶豆练习精细动作'},
+      ]},
+      {cat:'🍽️ 喂养营养',items:[
+        {key:'9m_self_feed',text:'鼓励自己用手抓食物吃',tip:'准备手指食物如软胡萝卜条、香蕉块'},
+        {key:'9m_food_texture',text:'过渡到碎末状、小颗粒状食物',tip:'锻炼咀嚼能力，不要一直吃泥状食物'},
+        {key:'9m_meal3',text:'辅食增加到每天2-3餐',tip:'逐步向家庭餐靠拢'},
+      ]},
+      {cat:'😴 睡眠作息',items:[
+        {key:'9m_separation',text:'了解分离焦虑期的睡眠问题',tip:'安抚物（小毯子、玩偶）可以帮助过渡'},
+        {key:'9m_2nap2',text:'白天小睡稳定在2次',tip:'上午和下午各1-2小时'},
+      ]},
+      {cat:'🧠 早期发展',items:[
+        {key:'9m_object',text:'会寻找被藏起来的玩具（物体恒存概念）',tip:'多玩"藏猫猫"游戏发展认知'},
+        {key:'9m_imitate',text:'模仿大人的简单动作（拍手、挥手拜拜）',tip:'这是社交学习的开始'},
+        {key:'9m_point',text:'开始用手指指物',tip:'宝宝指东西时及时告诉他名称'},
+      ]},
+    ]
+  },
+  { key:'9-12', title:'10-12月龄', ageRange:'9-12月龄', months:12, icon:'🚶',
+    items:[
+      {cat:'🩺 健康管理',items:[
+        {key:'12m_vaccine',text:'接种流脑A群第2针（约9月龄）',tip:'和第1针间隔3个月'},
+        {key:'12m_checkup',text:'完成12月龄体检',tip:'包括血常规、发育行为评估'},
+      ]},
+      {cat:'🏋️ 身体发育',items:[
+        {key:'12m_cruise',text:'能扶着家具横行（扶走）',tip:'提供安全的扶走环境，移开尖锐家具'},
+        {key:'12m_stand',text:'能独站片刻',tip:'不要着急学走路，每个宝宝节奏不同'},
+        {key:'12m_first_step',text:'部分宝宝开始迈出人生第一步',tip:'穿软底鞋或光脚在安全地面练习'},
+      ]},
+      {cat:'🍽️ 喂养营养',items:[
+        {key:'12m_3meals',text:'辅食升级为每日3餐+2次点心',tip:'逐步接近成人饮食结构'},
+        {key:'12m_cup',text:'学习用杯子喝水喝奶',tip:'1岁前逐步戒断奶瓶，预防龋齿和地包天'},
+        {key:'12m_self',text:'提供勺子让宝宝练习自己吃饭',tip:'容忍吃饭时的"战场"，这是独立性的关键一步'},
+      ]},
+      {cat:'😴 睡眠作息',items:[
+        {key:'12m_1nap',text:'约12-15月龄开始合并为1次午睡',tip:'午睡时长约2小时'},
+      ]},
+      {cat:'🧠 早期发展',items:[
+        {key:'12m_words',text:'能有意识地叫"爸爸""妈妈"',tip:'这是真正的语言开始，多跟宝宝说话'},
+        {key:'12m_gesture',text:'会用动作表达需求（指、摇头、挥手）',tip:'及时回应宝宝的非语言沟通'},
+        {key:'12m_stack',text:'会叠2块积木',tip:'提供大块积木，发展手眼协调'},
+        {key:'12m_book2',text:'指着绘本上的图画',tip:'每天亲子阅读时间增加到10-15分钟'},
+      ]},
+    ]
+  },
+  { key:'12-18', title:'1-1.5岁', ageRange:'12-18月龄', months:18, icon:'🎈',
+    items:[
+      {cat:'🩺 健康管理',items:[
+        {key:'18m_vaccine',text:'接种百白破第4针+麻腮风第2针+甲肝减毒疫苗',tip:'约18月龄，是重要的加强针'},
+        {key:'18m_checkup',text:'完成18月龄体检',tip:'包括发育行为评估、视力筛查、贫血筛查'},
+        {key:'18m_dental',text:'完成第一次牙科检查',tip:'乳牙萌出后应每6个月检查一次'},
+      ]},
+      {cat:'🏋️ 身体发育',items:[
+        {key:'18m_walk',text:'独立行走稳当，开始会跑',tip:'每天户外活动不少于1小时'},
+        {key:'18m_stairs',text:'能扶着栏杆上楼梯',tip:'教宝宝"倒着下"更安全'},
+        {key:'18m_throw',text:'会举手过肩扔球',tip:'这是大运动发展的里程碑'},
+      ]},
+      {cat:'🍽️ 喂养营养',items:[
+        {key:'18m_family',text:'和家人一起进餐，吃家庭食物',tip:'从辅食过渡到家庭餐，注意少盐、少糖、清淡'},
+        {key:'18m_wean',text:'自然离乳或逐步断母乳',tip:'循序渐进，不要突然断奶'},
+      ]},
+      {cat:'🧠 早期发展',items:[
+        {key:'18m_words10',text:'能说10-20个单词',tip:'多给物品命名，少看屏幕'},
+        {key:'18m_follow',text:'能执行简单的指令如"把球拿来"',tip:'这是语言理解能力发展的重要标志'},
+        {key:'18m_scribble',text:'喜欢涂鸦（握笔乱画）',tip:'准备大张纸和粗蜡笔，这是书写的前技能'},
+        {key:'18m_imagine',text:'开始出现假装游戏（假装喂娃娃）',tip:'这是想象力和同理心的萌芽'},
+      ]},
+    ]
+  },
+  { key:'18-24', title:'1.5-2岁', ageRange:'18-24月龄', months:24, icon:'🌟',
+    items:[
+      {cat:'🩺 健康管理',items:[
+        {key:'24m_vaccine',text:'接种乙脑减毒第2针（2岁）',tip:'出生后约720天'},
+        {key:'24m_checkup',text:'完成24月龄体检',tip:'包括全面的发育行为评估'},
+        {key:'24m_dental2',text:'定期牙科检查+涂氟',tip:'预防龋齿，建立良好的口腔卫生习惯'},
+      ]},
+      {cat:'🏋️ 身体发育',items:[
+        {key:'24m_run',text:'跑得稳，能踢球',tip:'每天户外活动不少于2小时'},
+        {key:'24m_jump',text:'能双脚跳离地面',tip:'这是协调能力发展的重要里程碑'},
+      ]},
+      {cat:'🍽️ 喂养营养',items:[
+        {key:'24m_self2',text:'基本能自己用勺子吃饭',tip:'培养独立进餐能力，不怕弄脏'},
+        {key:'24m_picky',text:'了解和应对挑食期',tip:'保持耐心，每餐提供至少一种宝宝喜欢的安全食物'},
+      ]},
+      {cat:'🧠 早期发展',items:[
+        {key:'24m_words50',text:'词汇量达50个以上，开始说2-3词短句',tip:'多提问、多对话，不要纠正发音'},
+        {key:'24m_toilet',text:'开始如厕训练的信号：对马桶感兴趣、尿布干2小时以上',tip:'不强迫、不惩罚，用绘本引导'},
+        {key:'24m_emotion2',text:'情绪波动大，开始出现"我"的概念',tip:'接纳情绪，命名情绪（"我知道你很生气"），给两选一'},
+        {key:'24m_sort',text:'能按颜色或形状分类',tip:'用乐高或拼图发展认知能力'},
+      ]},
+    ]
+  },
+];
+
+function renderParenting(){
+  const birth=appData.settings.birthDate;
+  const birthD=new Date(birth+'T00:00:00');
+  const todayD=new Date();
+  const elapsed=Math.floor((todayD-birthD)/86400000);
+  const currentMonth=Math.floor(elapsed/30.4375);
+
+  const checks=appData.parentingChecks||[];
+  const checkMap=new Map();
+  checks.forEach(c=>checkMap.set(c.stage_key+'_'+c.item_key, true));
+
+  // Determine which stage is "current" based on age
+  let activeStage=null, currentStageIdx=0;
+  for(let i=PARENTING_STAGES.length-1;i>=0;i--){
+    if(PARENTING_STAGES[i].months<=currentMonth+1){currentStageIdx=i;break;}
+  }
+  activeStage=PARENTING_STAGES[currentStageIdx];
+
+  let html='';
+
+  // Progress bar
+  let totalItems=0,completedItems=0;
+  PARENTING_STAGES.forEach(s=>{s.items.forEach(cat=>{totalItems+=cat.items.length;});});
+  completedItems=checkMap.size;
+  const pct=totalItems>0?Math.round(completedItems/totalItems*100):0;
+
+  html+='<div class="pg-progress"><h3 style="font-size:1rem;font-weight:600">📚 育儿宝典</h3><p style="font-size:.8rem;color:#8D6E63;margin-top:4px">小桃酥当前月龄：'+currentMonth+'个月 · 已完成 '+completedItems+'/'+totalItems+' 项（'+pct+'%）</p><div class="pg-progress-bar"><div class="pg-progress-fill" style="width:'+pct+'%"></div></div><p style="font-size:.7rem;color:#BCAAA4;margin-top:6px">基于浙江省科学育儿指导服务手册 + WHO/中国卫健委权威指南</p></div>';
+
+  // Render stages from current backwards
+  const visibleStages=[];
+  for(let i=PARENTING_STAGES.length-1;i>=0;i--){
+    if(i<=currentStageIdx+1||(i<=currentStageIdx+3&&checkMap.size>0)){
+      visibleStages.push({...PARENTING_STAGES[i], _isActive:i===currentStageIdx, _isUpcoming:i>currentStageIdx, _isExpanded:i===currentStageIdx||(i===currentStageIdx+1&&i>0)});
+    }
+  }
+
+  visibleStages.forEach(s=>{
+    let stageDone=0,stageTotal=0;
+    s.items.forEach(cat=>{cat.items.forEach(it=>{stageTotal++;if(checkMap.has(s.key+'_'+it.key))stageDone++;});});
+    const stagePct=stageTotal>0?Math.round(stageDone/stageTotal*100):0;
+
+    html+='<div class="pg-stage-card'+(s._isActive?' active':'')+'" data-stage="'+s.key+'">';
+    html+='<div class="pg-stage-header" onclick="this.parentElement.classList.toggle(\'expanded\')">';
+    html+='<div><div class="pg-stage-title">'+s.icon+' '+s.title+'</div><div class="pg-stage-age">'+s.ageRange+(s._isActive?' · 当前阶段':'')+'</div></div>';
+    html+='<div style="text-align:right"><span class="pg-stage-badge '+(stagePct>=80?'done':s._isActive?'current':'upcoming')+'">'+stageDone+'/'+stageTotal+'</span></div>';
+    html+='</div>';
+
+    html+='<div class="pg-stage-content" style="display:'+(s._isExpanded?'block':'none')+'">';
+    s.items.forEach(cat=>{
+      let catDone=0,catTotal=cat.items.length;
+      cat.items.forEach(it=>{if(checkMap.has(s.key+'_'+it.key))catDone++;});
+      html+='<div class="pg-cat"><div class="pg-cat-title">'+cat.cat+' ('+catDone+'/'+catTotal+')</div>';
+      cat.items.forEach(it=>{
+        const done=checkMap.has(s.key+'_'+it.key);
+        html+='<div class="pg-item" onclick="toggleParentingCheck(\''+s.key+'\',\''+it.key+'\')"><div class="pg-check'+(done?' done':'')+'">'+(done?'✓':'')+'</div><div><div class="pg-item-text">'+it.text+'</div>'+(it.tip?'<div class="pg-item-tip">💡 '+it.tip+'</div>':'')+'</div></div>';
+      });
+      html+='</div>';
+    });
+    html+='</div></div>';
+  });
+
+  $('#page-parenting').innerHTML=html;
+}
+
+async function toggleParentingCheck(stageKey,itemKey){
+  const checks=appData.parentingChecks||[];
+  const cid=stageKey+'_'+itemKey;
+  const existing=checks.find(c=>c.stage_key+'_'+c.item_key===cid);
+  const nowCompleted=!existing;
+  try{
+    await API.saveParentingCheck(stageKey,itemKey,nowCompleted);
+    if(nowCompleted){
+      appData.parentingChecks.push({stage_key:stageKey,item_key:itemKey,completed:true});
+    }else{
+      appData.parentingChecks=appData.parentingChecks.filter(c=>(c.stage_key+'_'+c.item_key)!==cid);
+    }
+    toast(nowCompleted?'已标记完成 ✓':'已取消标记','ok');
+    if(nowCompleted)celebrate();
+    renderParenting();
+  }catch(e){toast('操作失败: '+e.message,'err');}
+}
 //  SETTINGS PAGE
 // ============================================================
 function renderSettings(){
