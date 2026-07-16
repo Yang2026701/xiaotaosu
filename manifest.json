@@ -1,0 +1,25 @@
+{
+  "name": "小桃酥的成长记录",
+  "short_name": "小桃酥",
+  "description": "记录宝宝小桃酥的成长瞬间——照片、日记、发育记录、育儿宝典",
+  "start_url": "/xiaotaosu/",
+  "scope": "/xiaotaosu/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FFFBF5",
+  "theme_color": "#FFA07A",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
