@@ -228,13 +228,12 @@ input:focus,textarea:focus,select:focus{outline:none}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:300}
 
 /* FAB menu */
-.fab-menu{position:fixed;bottom:calc(56px+80px+env(safe-area-inset-bottom,0));right:16px;z-index:39;display:flex;flex-direction:column;gap:8px;transition:opacity .2s,transform .2s}
-.fab-menu.hidden{opacity:0;transform:translateY(16px);pointer-events:none}
-.fab-mbtn{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.25rem;box-shadow:0 2px 12px rgba(0,0,0,.1);color:#fff;transition:transform .15s}
+.fab-menu{position:fixed;right:16px;z-index:55;display:flex;flex-direction:column;gap:12px;transition:opacity .2s,transform .2s;pointer-events:auto}
+.fab-menu.hidden{opacity:0;transform:translateY(12px);pointer-events:none}
+.fab-mbtn{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.12);transition:transform .15s}
 .fab-mbtn:active{transform:scale(.9)}
-.fab-mbtn.photo{background:linear-gradient(135deg,#FFA07A,#FF8C69)}
-.fab-mbtn.video{background:linear-gradient(135deg,#FF91A4,#FF6B8A)}
-.fab-mbtn-label{position:absolute;right:56px;background:rgba(0,0,0,.7);color:#fff;font-size:.7rem;padding:3px 10px;border-radius:10px;white-space:nowrap;pointer-events:none}
+#fab-photo{background:#FFA07A;color:#fff}
+#fab-video{background:#FF91A4;color:#fff}
 @media(min-width:768px){.fab-menu{right:calc(50% - 384px + 16px)}}
 
 /* Video card overlay */
@@ -325,6 +324,10 @@ input:focus,textarea:focus,select:focus{outline:none}
   </nav>
 
   <button id="fab" class="hidden">+</button>
+  <div class="fab-menu hidden" id="fab-menu">
+    <button class="fab-mbtn" id="fab-photo">📷</button>
+    <button class="fab-mbtn" id="fab-video">🎬</button>
+  </div>
 
   <div class="modal" id="modal" hidden>
     <div class="mc"><div class="mh"><h2 id="mtitle"></h2><button class="btn-icon" id="mclose">✕</button></div><div class="mb" id="mbody"></div><div class="mf" id="mfooter"></div></div>
@@ -655,6 +658,7 @@ function navigate(tab) {
   const pg=$('#page-'+tab); if(pg)pg.hidden=false;
   $$('#tabs .tab').forEach(b=>{b.classList.toggle('active',b.dataset.tab===tab);});
   $('#fab').classList.toggle('hidden', tab==='settings');
+  if(fabMenuOpen)closeFabMenu();
   if(activeTab!==tab&&activeTab==='growth'){if(heightChart)heightChart.destroy();if(weightChart)weightChart.destroy();}
   activeTab=tab;
   renderPage();
@@ -723,41 +727,47 @@ function celebrate() {
 
 // FAB + FAB Menu
 let fabMenuOpen=false;
+const fabMenu=$('#fab-menu');
+// Position menu above FAB
+function updateFabMenuPos(){
+  const fabRect=$('#fab').getBoundingClientRect();
+  fabMenu.style.bottom=(window.innerHeight-fabRect.top+16)+'px';
+}
 function handleFab(e) {
   switch(activeTab){
     case'album':
       if(fabMenuOpen){closeFabMenu();return;}
-      openFabMenu();break;
+      updateFabMenuPos();
+      fabMenu.classList.remove('hidden');
+      fabMenuOpen=true;
+      $('#fab').textContent='✕';
+      break;
     case'milestones':showMsForm();break;
     case'growth':$('#btn-add-gr')?.click();break;
     case'diary':showDiaryForm();break;
   }
 }
-function openFabMenu(){
-  fabMenuOpen=true;
-  const menu=document.createElement('div');menu.id='fab-menu';menu.className='fab-menu';
-  menu.innerHTML='<button class="fab-mbtn photo" id="fab-photo">📷</button><button class="fab-mbtn video" id="fab-video">🎬</button>';
-  document.body.appendChild(menu);
-  // Close on outside click
-  setTimeout(()=>{
-    document.addEventListener('click',closeFabMenuOutside);
-  },10);
-  $('#fab').textContent='✕';
-}
 function closeFabMenu(){
+  fabMenu.classList.add('hidden');
   fabMenuOpen=false;
-  const m=$('#fab-menu');if(m)m.remove();
-  document.removeEventListener('click',closeFabMenuOutside);
   $('#fab').textContent='+';
 }
-function closeFabMenuOutside(e){
-  if(e.target===$('#fab')||e.target.closest('#fab-menu'))return;
+// Menu button clicks
+$('#fab-photo').addEventListener('click',function(e){
+  e.stopPropagation();
+  $('#photo-input').click();
   closeFabMenu();
-}
+});
+$('#fab-video').addEventListener('click',function(e){
+  e.stopPropagation();
+  $('#video-input').click();
+  closeFabMenu();
+});
+// Close menu on outside click
 document.addEventListener('click',function(e){
-  // Delegate fab menu button clicks
-  if(e.target.id==='fab-photo'||e.target.closest('#fab-photo')){$('#photo-input').click();closeFabMenu();}
-  if(e.target.id==='fab-video'||e.target.closest('#fab-video')){$('#video-input').click();closeFabMenu();}
+  if(fabMenuOpen && !e.target.closest('#fab-menu') && e.target!==$('#fab')){
+    closeFabMenu();
+  }
 });
 
 // ============================================================
