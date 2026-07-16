@@ -421,7 +421,7 @@ const API = {
     return{id:r.id,title:r.title||'',description:r.description||'',date:r.photo_date,isVideo:!!r.is_video,dataUrl:r.storage_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.storage_path:'',thumbnailDataUrl:r.thumb_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.thumb_path:r.storage_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.storage_path:'',tags:r.tags||[],favorite:r.favorite||false,originalSize:r.original_size||0};
   },
   addPhoto(p) { return this._fetch('POST','/rest/v1/photos',{id:p.id,title:p.title,description:p.description,photo_date:p.date,storage_path:p._sp,thumb_path:p._tp,tags:p.tags,favorite:p.favorite,original_size:p.originalSize,is_video:!!p.isVideo}); },
-  updatePhoto(id,u) { const r={};if(u.favorite!==undefined)r.favorite=u.favorite;if(u.title!==undefined)r.title=u.title;if(u.description!==undefined)r.description=u.description;if(u.tags!==undefined)r.tags=u.tags;return this._fetch('PATCH','/rest/v1/photos?id=eq.'+encodeURIComponent(id),r); },
+  updatePhoto(id,u) { const r={};if(u.favorite!==undefined)r.favorite=u.favorite;if(u.title!==undefined)r.title=u.title;if(u.description!==undefined)r.description=u.description;if(u.date!==undefined)r.photo_date=u.date;if(u.tags!==undefined)r.tags=u.tags;return this._fetch('PATCH','/rest/v1/photos?id=eq.'+encodeURIComponent(id),r); },
   async deletePhoto(id) {
     try{const d=await this._fetch('GET','/rest/v1/photos?id=eq.'+encodeURIComponent(id)+'&select=storage_path,thumb_path');if(d&&d[0]){const ps=[d[0].storage_path];if(d[0].thumb_path)ps.push(d[0].thumb_path);await fetch(CFG.SUPABASE_URL+'/storage/v1/object/'+CFG.BUCKET+'?'+ps.map(p=>'paths='+encodeURIComponent(p)).join('&'),{method:'DELETE',headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}}).catch(()=>{});}}catch(e){}
     return this._fetch('DELETE','/rest/v1/photos?id=eq.'+encodeURIComponent(id));
@@ -1124,16 +1124,18 @@ function showPhotoForm(pid,pp,tp,isVideo) {
 // Edit media title & description from lightbox
 function showEditMediaForm(cur, onUpdated){
   const html='<div class="fg"><label class="fl">标题</label><input type="text" class="fi" id="em-title" value="'+U.esc(cur.title||'')+'" placeholder="给'+ (cur.isVideo?'视频':'照片')+'取个名字"></div>'+
+    '<div class="fg"><label class="fl">日期</label><input type="date" class="fi" id="em-date" value="'+cur.date+'"></div>'+
     '<div class="fg"><label class="fl">描述</label><textarea class="ft" id="em-desc" rows="3" placeholder="写下这一刻的故事...">'+U.esc(cur.description||'')+'</textarea></div>';
   showModal('编辑'+(cur.isVideo?'视频':'照片'),html,async()=>{
-    const title=$('#em-title').value.trim(),desc=$('#em-desc').value.trim();
+    const title=$('#em-title').value.trim(),desc=$('#em-desc').value.trim(),date=$('#em-date').value;
+    if(!date){toast('请选择日期','err');return false;}
     try{
-      await API.updatePhoto(cur.id,{title,description:desc});
-      cur.title=title;cur.description=desc;
+      await API.updatePhoto(cur.id,{title,description:desc,date:date});
+      cur.title=title;cur.description=desc;cur.date=date;
       const photo=appData.photos.find(x=>x.id===cur.id);
-      if(photo){photo.title=title;photo.description=desc;}
+      if(photo){photo.title=title;photo.description=desc;photo.date=date;}
       toast('已更新','ok');
-      if(onUpdated)onUpdated(); // Re-render lightbox
+      if(onUpdated)onUpdated();
       return true;
     }catch(e){toast('更新失败: '+e.message,'err');return false;}
   });
