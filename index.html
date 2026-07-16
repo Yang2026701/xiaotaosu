@@ -212,16 +212,35 @@ input:focus,textarea:focus,select:focus{outline:none}
 .tbl th,.tbl td{text-align:center;padding:8px 4px;border-bottom:1px solid #F0E8E0}
 .tbl th{font-weight:500;color:#BCAAA4;font-size:.75rem}
 
-/* Diary */
-.dc{padding:16px;background:#fff;border-radius:12px;border:1px solid #F0E8E0;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);cursor:pointer;transition:transform .2s,box-shadow .3s}
-.dc:active{box-shadow:0 4px 12px rgba(0,0,0,.06)}
-.dc-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.dc-mood{font-size:1.5rem}
+/* Diary - enhanced */
+.diary-tl{position:relative;padding-left:20px}
+.diary-tl::before{content:'';position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg,#FFA07A,#FFB6C1,#D7CCC8);border-radius:1px}
+.dc{position:relative;padding:16px;border-radius:14px;margin-bottom:16px;cursor:pointer;transition:transform .2s,box-shadow .3s;overflow:hidden}
+.dc::before{content:'';position:absolute;left:-24px;top:22px;width:10px;height:10px;border-radius:50%;border:2px solid #fff;z-index:1}
+.dc-mood-joyful{background:linear-gradient(135deg,#FFFBF5,#FFF0EB);border:1px solid rgba(255,160,122,.15)}.dc-mood-joyful::before{background:#FFA07A;box-shadow:0 0 0 2px rgba(255,160,122,.3)}
+.dc-mood-tired{background:linear-gradient(135deg,#FFFBF5,#E8EAF6);border:1px solid rgba(159,168,218,.15)}.dc-mood-tired::before{background:#9FA8DA;box-shadow:0 0 0 2px rgba(159,168,218,.3)}
+.dc-mood-grateful{background:linear-gradient(135deg,#FFFBF5,#F3E5F5);border:1px solid rgba(206,147,216,.15)}.dc-mood-grateful::before{background:#CE93D8;box-shadow:0 0 0 2px rgba(206,147,216,.3)}
+.dc-mood-worried{background:linear-gradient(135deg,#FFFBF5,#E3F2FD);border:1px solid rgba(144,202,249,.15)}.dc-mood-worried::before{background:#90CAF9;box-shadow:0 0 0 2px rgba(144,202,249,.3)}
+.dc-mood-touched{background:linear-gradient(135deg,#FFFBF5,#FFE0B2);border:1px solid rgba(255,183,77,.15)}.dc-mood-touched::before{background:#FFB74D;box-shadow:0 0 0 2px rgba(255,183,77,.3)}
+.dc-mood-amused{background:linear-gradient(135deg,#FFFBF5,#C8E6C9);border:1px solid rgba(129,199,132,.15)}.dc-mood-amused::before{background:#81C784;box-shadow:0 0 0 2px rgba(129,199,132,.3)}
+.dc-mood-hopeful{background:linear-gradient(135deg,#FFFBF5,#FFE0F0);border:1px solid rgba(240,98,146,.1)}.dc-mood-hopeful::before{background:#F06292;box-shadow:0 0 0 2px rgba(240,98,146,.3)}
+.dc:active{transform:scale(.98);box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.dc-h{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.dc-mood{font-size:1.8rem;line-height:1}
 .dc-date{font-size:.75rem;color:#BCAAA4}
-.dc-title{font-size:1rem;font-weight:500;margin-bottom:4px}
-.dc-preview{font-size:.875rem;color:#8D6E63;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.dc-footer{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-.dc-tag{font-size:.75rem;color:#FF8C69;background:#FFEDE6;padding:2px 8px;border-radius:50px}
+.dc-weather{font-size:.9rem}
+.dc-title{font-size:1.05rem;font-weight:600;margin-bottom:6px;color:#4E342E}
+.dc-preview{font-size:.875rem;color:#8D6E63;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;line-height:1.6}
+.dc-photos{display:flex;gap:6px;margin-top:10px;overflow-x:auto}
+.dc-photos img{width:60px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0}
+.dc-footer{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.dc-tag{font-size:.7rem;color:#FF8C69;background:rgba(255,160,122,.1);padding:2px 8px;border-radius:10px}
+.dc-otd{background:linear-gradient(135deg,#FFE0D5,#FFEDE6);border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:.85rem;display:flex;align-items:center;gap:8px}
+.dc-otd span{color:#FF8C69;font-weight:600}
+.dc-template{background:#fff;border-radius:14px;padding:10px;margin-bottom:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.dc-tpl-btn{text-align:center;padding:10px 4px;border-radius:10px;border:1px dashed #EDE7E0;cursor:pointer;font-size:.75rem;transition:all .15s}
+.dc-tpl-btn:active{background:#FFF0EB;border-color:#FFA07A}
+.dc-tpl-btn .tpl-icon{font-size:1.2rem;display:block;margin-bottom:2px}
 .detail-h{margin-bottom:24px}
 .detail-content{font-size:1rem;line-height:1.8;white-space:pre-wrap;margin-bottom:24px}
 /* Parenting Guide */
@@ -520,9 +539,9 @@ const API = {
   getGrowth() { return this._fetch('GET','/rest/v1/growth_records?select=*&order=record_date.asc').then(d=>(d||[]).map(r=>({id:r.id,date:r.record_date,ageInDays:r.age_days,height:r.height,weight:r.weight,headCircumference:r.head_circumference,notes:r.notes}))); },
   addGrowth(g) { return this._fetch('POST','/rest/v1/growth_records',{id:g.id,record_date:g.date,age_days:g.ageInDays,height:g.height,weight:g.weight,head_circumference:g.headCircumference,notes:g.notes}); },
   deleteGrowth(id) { return this._fetch('DELETE','/rest/v1/growth_records?id=eq.'+encodeURIComponent(id)); },
-  getDiary() { return this._fetch('GET','/rest/v1/diary_entries?select=*&order=entry_date.desc').then(d=>(d||[]).map(r=>({id:r.id,date:r.entry_date,title:r.title,content:r.content,mood:r.mood,photoIds:r.photo_ids||[],tags:r.tags||[]}))); },
-  addDiary(e) { return this._fetch('POST','/rest/v1/diary_entries',{id:e.id,entry_date:e.date,title:e.title,content:e.content,mood:e.mood,photo_ids:e.photoIds,tags:e.tags}); },
-  updateDiary(id,u) { return this._fetch('PATCH','/rest/v1/diary_entries?id=eq.'+encodeURIComponent(id),{entry_date:u.date,title:u.title,content:u.content,mood:u.mood,tags:u.tags}); },
+  getDiary() { return this._fetch('GET','/rest/v1/diary_entries?select=*&order=entry_date.desc').then(d=>(d||[]).map(r=>({id:r.id,date:r.entry_date,title:r.title,content:r.content,mood:r.mood,weather:r.weather||'',photoIds:r.photo_ids||[],tags:r.tags||[]}))); },
+  addDiary(e) { return this._fetch('POST','/rest/v1/diary_entries',{id:e.id,entry_date:e.date,title:e.title,content:e.content,mood:e.mood,weather:e.weather||'',photo_ids:e.photoIds,tags:e.tags}); },
+  updateDiary(id,u) { return this._fetch('PATCH','/rest/v1/diary_entries?id=eq.'+encodeURIComponent(id),{entry_date:u.date,title:u.title,content:u.content,mood:u.mood,weather:u.weather||'',tags:u.tags,photo_ids:u.photoIds}); },
   deleteDiary(id) { return this._fetch('DELETE','/rest/v1/diary_entries?id=eq.'+encodeURIComponent(id)); },
   getHealth() { return this._fetch('GET','/rest/v1/health_records?select=*&order=record_date.asc').then(d=>(d||[]).map(r=>({id:r.id,recordType:r.record_type,title:r.title,date:r.record_date,ageDays:r.age_days,notes:r.notes,isCompleted:r.is_completed,filePath:r.file_path||'',fileName:r.file_name||''}))); },
   addHealth(h) { return this._fetch('POST','/rest/v1/health_records',{id:h.id,record_type:h.recordType,title:h.title,record_date:h.date,age_days:h.ageDays,notes:h.notes,is_completed:h.isCompleted,file_path:h.filePath||'',file_name:h.fileName||''}); },
@@ -1465,57 +1484,117 @@ function renderDiary(){
   const entries=[...appData.diaryEntries].sort((a,b)=>b.date.localeCompare(a.date));
   if(diaryDetail){const e=entries.find(x=>x.id===diaryDetail);if(e){renderDiaryDetail(e);return;}diaryDetail=null;}
 
-  if(entries.length===0){$('#page-diary').innerHTML=emptyState('📝','还没有日记哦','记录和小桃酥在一起的每一个温暖瞬间~');return;}
+  if(entries.length===0){
+    $('#page-diary').innerHTML='<div class="dc-template">'+['📝','✨','💌'].map((ic,i)=>{var tt=['今日第一次','今日趣事','妈妈想对你说'];return'<div class="dc-tpl-btn" onclick="startDiaryTemplate(\''+tt[i]+'\')"><span class="tpl-icon">'+ic+'</span>'+tt[i]+'</div>';}).join('')+'</div>'+emptyState('📝','还没有日记哦','记录和小桃酥在一起的每一个温暖瞬间~');return;
+  }
 
-  let html='<div>';
-  entries.forEach(e=>{
-    const mood=MOODS.find(x=>x.key===e.mood)||MOODS[0];
-    html+='<div class="dc" data-id="'+e.id+'"><div class="dc-h"><span class="dc-mood">'+mood.emoji+'</span><span class="dc-date">'+U.fmtDate(e.date)+'</span></div><div class="dc-title">'+U.esc(e.title||'无标题')+'</div><div class="dc-preview">'+U.esc(e.content||'')+'</div><div class="dc-footer">'+(e.tags||[]).map(t=>'<span class="dc-tag">#'+U.esc(t)+'</span>').join('')+'</div></div>';
+  const birth=appData.settings.birthDate, today=U.today();
+  let html='';
+
+  // Templates
+  html+='<div class="dc-template">'+['✨','💡','💌'].map((ic,i)=>{var tt=['今日第一次','今日趣事','妈妈想对你说'];return'<div class="dc-tpl-btn" onclick="startDiaryTemplate(\''+tt[i]+'\')"><span class="tpl-icon">'+ic+'</span>'+tt[i]+'</div>';}).join('')+'</div>';
+
+  // That-year-today
+  var thisDayEntries=entries.filter(function(e){return e.date.substring(5)===today.substring(5)&&e.date!==today;});
+  if(thisDayEntries.length>0){
+    var pastE=thisDayEntries[0], pastDate=new Date(pastE.date+'T00:00:00'), todayDate=new Date(today+'T00:00:00');
+    var yearsAgo=Math.floor((todayDate-pastDate)/(365.25*86400000));
+    html+='<div class="dc-otd"><span>📅</span> <span>那年今日（'+yearsAgo+'年前）：</span>'+U.esc(pastE.title||'无标题')+'</div>';
+  }
+
+  // Time axis
+  html+='<div class="diary-tl">';
+  entries.forEach(function(e){
+    var mood=MOODS.find(function(x){return x.key===e.mood;})||MOODS[0];
+    var photos=(e.photoIds||[]).map(function(pid){return appData.photos.find(function(p){return p.id===pid;});}).filter(Boolean);
+    html+='<div class="dc dc-mood-'+e.mood+'" data-id="'+e.id+'">';
+    html+='<div class="dc-h"><span class="dc-mood">'+mood.emoji+'</span><span class="dc-date">'+U.fmtDate(e.date)+'</span>'+(e.weather?'<span class="dc-weather">'+e.weather+'</span>':'')+'</div>';
+    html+='<div class="dc-title">'+U.esc(e.title||'无标题')+'</div>';
+    html+='<div class="dc-preview">'+U.esc(e.content||'')+'</div>';
+    if(photos.length>0){
+      html+='<div class="dc-photos">'+photos.slice(0,4).map(function(p){return'<img src="'+(p.thumbnailDataUrl||p.dataUrl)+'" alt="" loading="lazy">';}).join('')+(photos.length>4?'<span style="font-size:.75rem;color:#BCAAA4;align-self:center">+'+ (photos.length-4)+'</span>':'')+'</div>';
+    }
+    html+='<div class="dc-footer">'+(e.tags||[]).slice(0,3).map(function(t){return'<span class="dc-tag">#'+U.esc(t)+'</span>';}).join('')+'</div>';
+    html+='</div>';
   });
   html+='</div>';
   $('#page-diary').innerHTML=html;
 
-  $$('#page-diary .dc').forEach(card=>{card.addEventListener('click',()=>{diaryDetail=card.dataset.id;renderDiary();});});
+  $$('#page-diary .dc').forEach(function(card){card.addEventListener('click',function(){diaryDetail=card.dataset.id;renderDiary();});});
+}
+
+function startDiaryTemplate(tpl){
+  var birth=appData.settings.birthDate, age=U.age(birth,U.today());
+  var title='',content='';
+  switch(tpl){
+    case'今日第一次':title=age.text+'的第一次';content='今天小桃酥第一次...\n\n我们好惊喜，赶紧记录下来。';break;
+    case'今日趣事':title='小桃酥的趣事';content='今天发生了一件好玩的事...\n\n小桃酥的反应太可爱了！';break;
+    case'妈妈想对你说':title='写给小桃酥';content='亲爱的宝贝，\n\n今天妈妈想对你说...';break;
+  }
+  showDiaryForm(null,tpl,title,content);
 }
 
 function renderDiaryDetail(e){
-  const mood=MOODS.find(x=>x.key===e.mood)||MOODS[0];
-  let html='<button class="btn btn-s btn-sm" id="dback" style="margin-bottom:16px">← 返回</button>';
-  html+='<div class="detail-h"><div class="dc-date">'+U.fmtDate(e.date)+'</div><div style="font-size:2rem">'+mood.emoji+' '+mood.label+'</div><h2 style="font-size:1.25rem;font-weight:600;margin-top:4px">'+U.esc(e.title||'无标题')+'</h2></div>';
-  html+='<div class="detail-content">'+U.esc(e.content||'')+'</div>';
-  html+='<div style="display:flex;gap:8px;margin-bottom:16px">'+(e.tags||[]).map(t=>'<span class="chip">#'+U.esc(t)+'</span>').join('')+'</div>';
+  var mood=MOODS.find(function(x){return x.key===e.mood;})||MOODS[0];
+  var photos=(e.photoIds||[]).map(function(pid){return appData.photos.find(function(p){return p.id===pid;});}).filter(Boolean);
+  var charCount=(e.content||'').length, readTime=Math.max(1,Math.ceil(charCount/400));
+  var html='<button class="btn btn-s btn-sm" id="dback" style="margin-bottom:16px">← 返回</button>';
+  html+='<div class="detail-h dc-mood-'+e.mood+'" style="padding:20px;border-radius:14px">';
+  html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">';
+  html+='<span class="dc-date">'+U.fmtDate(e.date)+'</span>';
+  if(e.weather)html+='<span class="dc-weather">'+e.weather+'</span>';
+  html+='<span style="font-size:.7rem;color:#BCAAA4;margin-left:auto">'+charCount+'字 · 约'+readTime+'分钟</span>';
+  html+='</div>';
+  html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:2rem">'+mood.emoji+'</span><span style="font-size:.9rem;color:#8D6E63">'+mood.label+'</span></div>';
+  html+='<h2 style="font-size:1.3rem;font-weight:700;margin:0">'+U.esc(e.title||'无标题')+'</h2>';
+  html+='</div>';
+  if(photos.length>0){
+    html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin:16px 0">';
+    photos.forEach(function(p){html+='<img src="'+(p.dataUrl||p.thumbnailDataUrl)+'" alt="" style="width:100%;border-radius:10px;aspect-ratio:1;object-fit:cover;cursor:pointer" loading="lazy" onclick="window.open(\''+p.dataUrl+'\',\'_blank\')">';});
+    html+='</div>';
+  }
+  html+='<div class="detail-content" style="padding:4px 0">'+(e.content||'').split('\n').map(function(l){return'<p style="margin-bottom:8px;line-height:1.8">'+U.esc(l)+'</p>';}).join('')+'</div>';
+  if(e.tags&&e.tags.length){html+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+e.tags.map(function(t){return'<span class="chip">#'+U.esc(t)+'</span>';}).join('')+'</div>';}
   html+='<div style="display:flex;gap:8px"><button class="btn btn-p btn-sm" id="dedit">✏️ 编辑</button><button class="btn btn-d btn-sm" id="ddel">🗑️ 删除</button></div>';
   $('#page-diary').innerHTML=html;
 
-  $('#dback').addEventListener('click',()=>{diaryDetail=null;renderDiary();});
-  $('#dedit').addEventListener('click',()=>{diaryDetail=null;showDiaryForm(e);});
-  $('#ddel').addEventListener('click',()=>{confirm('确定删除？',async()=>{await API.deleteDiary(e.id);toast('已删除','ok');diaryDetail=null;reloadData().then(()=>renderPage());});});
+  $('#dback').addEventListener('click',function(){diaryDetail=null;renderDiary();});
+  $('#dedit').addEventListener('click',function(){diaryDetail=null;showDiaryForm(e);});
+  $('#ddel').addEventListener('click',function(){confirm('确定删除？',async function(){await API.deleteDiary(e.id);toast('已删除','ok');diaryDetail=null;reloadData().then(function(){renderPage();});});});
 }
 
-function showDiaryForm(existing){
-  const isEdit=!!existing,today=U.today();
-  let selMood=existing?existing.mood:'joyful';
-  const moodsHtml=MOODS.map(md=>'<button class="mood-o'+(selMood===md.key?' sel':'')+'" data-mood="'+md.key+'" title="'+md.label+'">'+md.emoji+'</button>').join('');
+function showDiaryForm(existing,tplName,tplTitle,tplContent){
+  var isEdit=!!existing,today=U.today();
+  var selMood=existing?existing.mood:(tplName==='妈妈想对你说'?'touched':'joyful');
+  var selWeather=existing?existing.weather||'':'';
+  var moodsHtml=MOODS.map(function(md){return'<button class="mood-o'+(selMood===md.key?' sel':'')+'" data-mood="'+md.key+'" title="'+md.label+'">'+md.emoji+'</button>';}).join('');
+  var weathers=['☀️','⛅','☁️','🌧️','⛈️','❄️','🌈','🌙'];
+  var wHtml=weathers.map(function(w){return'<button class="mood-o'+(selWeather===w?' sel':'')+'" data-w="'+w+'" style="font-size:1.2rem">'+w+'</button>';}).join('');
 
-  const html='<div class="fg"><label class="fl">日期</label><input type="date" class="fi" id="dy-date" value="'+(existing?existing.date:today)+'"></div>'+
-    '<div class="fg"><label class="fl">标题</label><input type="text" class="fi" id="dy-title" value="'+(existing?U.esc(existing.title||''):'')+'" placeholder="给这篇日记起个标题"></div>'+
+  var html='<div class="fg"><label class="fl">日期</label><input type="date" class="fi" id="dy-date" value="'+(existing?existing.date:today)+'"></div>'+
+    '<div class="fg"><label class="fl">标题</label><input type="text" class="fi" id="dy-title" value="'+U.esc(tplTitle||(existing?existing.title||'':''))+'" placeholder="给这篇日记起个标题"></div>'+
     '<div class="fg"><label class="fl">心情</label><div class="moods" id="dy-moods">'+moodsHtml+'</div></div>'+
-    '<div class="fg"><label class="fl">内容</label><textarea class="ft" id="dy-content" rows="6" placeholder="今天发生了什么...">'+(existing?U.esc(existing.content||''):'')+'</textarea></div>'+
+    '<div class="fg"><label class="fl">天气</label><div class="moods" id="dy-weathers">'+wHtml+'</div></div>'+
+    '<div class="fg"><label class="fl">内容</label><textarea class="ft" id="dy-content" rows="7" placeholder="今天发生了什么...">'+U.esc(tplContent||(existing?existing.content||'':''))+'</textarea></div>'+
     '<div class="fg"><label class="fl">标签（逗号分隔）</label><input type="text" class="fi" id="dy-tags" value="'+(existing?(existing.tags||[]).join(', '):'')+'" placeholder="例如: 出生, 医院">';
 
-  showModal(isEdit?'编辑日记':'写日记',html,async()=>{
-    const date=$('#dy-date').value,title=$('#dy-title').value.trim(),content=$('#dy-content').value.trim(),tagsStr=$('#dy-tags').value.trim();
+  var modalTitle=isEdit?'编辑日记':'写日记';
+  if(tplName)modalTitle+=' · '+tplName;
+
+  showModal(modalTitle,html,async function(){
+    var date=$('#dy-date').value,title=$('#dy-title').value.trim(),content=$('#dy-content').value.trim(),tagsStr=$('#dy-tags').value.trim();
     if(!date){toast('请选择日期','err');return false;}
     if(!title){toast('请输入标题','err');return false;}
-    const tags=tagsStr?tagsStr.split(/[,，]/).map(t=>t.trim()).filter(Boolean):[];
-    const data={date,title,content,mood:selMood,tags,photoIds:existing?existing.photoIds:[]};
+    var tags=tagsStr?tagsStr.split(/[,，]/).map(function(t){return t.trim();}).filter(Boolean):[];
+    var data={date:date,title:title,content:content,mood:selMood,weather:selWeather,tags:tags,photoIds:existing?existing.photoIds:[]};
     try{
       if(isEdit){await API.updateDiary(existing.id,data);toast('已更新','ok');}
       else{data.id=U.genId('d');await API.addDiary(data);toast('日记已保存','ok');celebrate();}
       return true;
     }catch(e){toast('保存失败: '+e.message,'err');return false;}
-  },()=>{
-    $$('#dy-moods .mood-o').forEach(b=>{b.addEventListener('click',()=>{$$('#dy-moods .mood-o').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');selMood=b.dataset.mood;});});
+  },function(){
+    $$('#dy-moods .mood-o').forEach(function(b){b.addEventListener('click',function(){$$('#dy-moods .mood-o').forEach(function(x){x.classList.remove('sel');});b.classList.add('sel');selMood=b.dataset.mood;});});
+    $$('#dy-weathers .mood-o').forEach(function(b){b.addEventListener('click',function(){$$('#dy-weathers .mood-o').forEach(function(x){x.classList.remove('sel');});b.classList.add('sel');selWeather=b.dataset.w;});});
   });
 }
 
