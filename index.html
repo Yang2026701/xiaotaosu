@@ -946,7 +946,7 @@ function renderCharts(records,birth){
       {label:'P50',data:whoH.p50,borderColor:'#D7CCC8',borderWidth:1,borderDash:[6,3],pointRadius:0,fill:false,order:9},
       {label:'P3',data:whoH.p3,borderColor:'rgba(215,204,200,0.5)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:{target:'+2',above:'rgba(215,204,200,0.12)'},order:10},
       {label:'小桃酥',data:hData,borderColor:'#FF8C69',backgroundColor:'#FF8C69',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#FF8C69',pointBorderColor:'#FFF',pointBorderWidth:2,pointHoverRadius:7,tension:.2,fill:false,order:1}
-    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{type:'linear',title:{display:true,text:'天数',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:0,max:maxAge+30},y:{title:{display:true,text:'身高(cm)',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:40,max:100}}});
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{type:'linear',title:{display:true,text:'天数',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:0,max:maxAge+30},y:{title:{display:true,text:'身高(cm)',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:40,max:100}}}});
   }
 
   const wData=records.filter(r=>r.weight!=null).map(r=>({x:r.ageInDays,y:r.weight}));
@@ -957,7 +957,7 @@ function renderCharts(records,birth){
       {label:'P50',data:whoW.p50,borderColor:'#D7CCC8',borderWidth:1,borderDash:[6,3],pointRadius:0,fill:false,order:9},
       {label:'P3',data:whoW.p3,borderColor:'rgba(215,204,200,0.5)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:{target:'+2',above:'rgba(215,204,200,0.12)'},order:10},
       {label:'小桃酥',data:wData,borderColor:'#81C784',backgroundColor:'#81C784',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#81C784',pointBorderColor:'#FFF',pointBorderWidth:2,pointHoverRadius:7,tension:.2,fill:false,order:1}
-    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{type:'linear',title:{display:true,text:'天数',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:0,max:maxAge+30},y:{title:{display:true,text:'体重(kg)',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:1,max:18}}});
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{type:'linear',title:{display:true,text:'天数',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:0,max:maxAge+30},y:{title:{display:true,text:'体重(kg)',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:1,max:18}}}});
   }
 }
 
