@@ -1483,11 +1483,11 @@ function renderCharts(records,birth){
 
   var c1=$('#ch');if(c1){
     heightChart=new Chart(c1,{type:'line',data:{datasets:[
-      {label:'P97',data:whoH.p97,borderColor:'rgba(215,204,200,0.6)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false,order:10},
-      {label:'P85-P50',data:whoH.p85,borderColor:'rgba(215,204,200,0.35)',borderWidth:1,borderDash:[2,6],pointRadius:0,fill:{target:'+1',above:'rgba(129,199,132,0.06)'},order:10},
-      {label:'P50',data:whoH.p50,borderColor:'#D7CCC8',borderWidth:1.5,borderDash:[8,4],pointRadius:0,fill:false,order:9},
-      {label:'P15-P50',data:whoH.p15,borderColor:'rgba(215,204,200,0.35)',borderWidth:1,borderDash:[2,6],pointRadius:0,fill:{target:'+1',above:'rgba(255,140,105,0.05)'},order:10},
-      {label:'P3',data:whoH.p3,borderColor:'rgba(215,204,200,0.6)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false,order:10},
+      {label:'同月龄极高(前3%)',data:whoH.p97,borderColor:'rgba(215,204,200,0.6)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false,order:10},
+      {label:'正常偏高(P50~P97)',data:whoH.p85,borderColor:'rgba(215,204,200,0.35)',borderWidth:1,borderDash:[2,6],pointRadius:0,fill:{target:'+1',above:'rgba(129,199,132,0.06)'},order:10},
+      {label:'同月龄中等(中位线)',data:whoH.p50,borderColor:'#D7CCC8',borderWidth:1.5,borderDash:[8,4],pointRadius:0,fill:false,order:9},
+      {label:'正常偏低(P3~P50)',data:whoH.p15,borderColor:'rgba(215,204,200,0.35)',borderWidth:1,borderDash:[2,6],pointRadius:0,fill:{target:'+1',above:'rgba(255,140,105,0.05)'},order:10},
+      {label:'同月龄极低(后3%)',data:whoH.p3,borderColor:'rgba(215,204,200,0.6)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false,order:10},
       {label:'小桃酥',data:hData,borderColor:'#FF8C69',backgroundColor:'#FF8C69',borderWidth:2.5,pointRadius:6,pointBackgroundColor:'#FF8C69',pointBorderColor:'#FFF',pointBorderWidth:2.5,pointHoverRadius:8,tension:.2,fill:false,order:1}
     ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'#4E342E',cornerRadius:8,callbacks:{label:function(ctx){return ctx.dataset.label+'：'+ctx.parsed.y+(ctx.dataset.label==='小桃酥'?' cm':'');}}}},scales:{x:{type:'linear',title:{display:true,text:'天数',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:0,max:maxAge+30},y:{title:{display:true,text:'身高(cm)',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:40,max:105}}}});
   }
@@ -1496,11 +1496,11 @@ function renderCharts(records,birth){
   var whoW=buildWHO(records,birth,'weight');
   var c2=$('#cw');if(c2){
     weightChart=new Chart(c2,{type:'line',data:{datasets:[
-      {label:'P97',data:whoW.p97,borderColor:'rgba(215,204,200,0.6)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false,order:10},
-      {label:'P85-P50',data:whoW.p85,borderColor:'rgba(215,204,200,0.35)',borderWidth:1,borderDash:[2,6],pointRadius:0,fill:{target:'+1',above:'rgba(129,199,132,0.06)'},order:10},
-      {label:'P50',data:whoW.p50,borderColor:'#D7CCC8',borderWidth:1.5,borderDash:[8,4],pointRadius:0,fill:false,order:9},
-      {label:'P15-P50',data:whoW.p15,borderColor:'rgba(215,204,200,0.35)',borderWidth:1,borderDash:[2,6],pointRadius:0,fill:{target:'+1',above:'rgba(255,140,105,0.05)'},order:10},
-      {label:'P3',data:whoW.p3,borderColor:'rgba(215,204,200,0.6)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false,order:10},
+      {label:'同月龄极高(前3%)',data:whoW.p97,borderColor:'rgba(215,204,200,0.6)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false,order:10},
+      {label:'正常偏高(P50~P97)',data:whoW.p85,borderColor:'rgba(215,204,200,0.35)',borderWidth:1,borderDash:[2,6],pointRadius:0,fill:{target:'+1',above:'rgba(129,199,132,0.06)'},order:10},
+      {label:'同月龄中等(中位线)',data:whoW.p50,borderColor:'#D7CCC8',borderWidth:1.5,borderDash:[8,4],pointRadius:0,fill:false,order:9},
+      {label:'正常偏低(P3~P50)',data:whoW.p15,borderColor:'rgba(215,204,200,0.35)',borderWidth:1,borderDash:[2,6],pointRadius:0,fill:{target:'+1',above:'rgba(255,140,105,0.05)'},order:10},
+      {label:'同月龄极低(后3%)',data:whoW.p3,borderColor:'rgba(215,204,200,0.6)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false,order:10},
       {label:'小桃酥',data:wData,borderColor:'#81C784',backgroundColor:'#81C784',borderWidth:2.5,pointRadius:6,pointBackgroundColor:'#81C784',pointBorderColor:'#FFF',pointBorderWidth:2.5,pointHoverRadius:8,tension:.2,fill:false,order:1}
     ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'#4E342E',cornerRadius:8,callbacks:{label:function(ctx){return ctx.dataset.label+'：'+ctx.parsed.y+(ctx.dataset.label==='小桃酥'?' kg':'');}}}},scales:{x:{type:'linear',title:{display:true,text:'天数',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:0,max:maxAge+30},y:{title:{display:true,text:'体重(kg)',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:1,max:20}}}});
   }
