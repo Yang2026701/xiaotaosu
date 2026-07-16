@@ -410,7 +410,7 @@ const API = {
   updateConfig(u) { return this._fetch('PATCH','/rest/v1/app_config?id=eq.1',u); },
   getPhotos() { return this._fetch('GET','/rest/v1/photos?select=*&order=photo_date.desc').then(d=>(d||[]).map(this._mapPhoto.bind(this))); },
   _mapPhoto(r) {
-    return{id:r.id,title:r.title||'',description:r.description||'',date:r.photo_date,isVideo:!!r.is_video,dataUrl:r.storage_path?CFG.SUPABASE_URL+'/storage/v1/object/public/'+r.storage_path:'',thumbnailDataUrl:r.thumb_path?CFG.SUPABASE_URL+'/storage/v1/object/public/'+r.thumb_path:r.storage_path?CFG.SUPABASE_URL+'/storage/v1/object/public/'+r.storage_path:'',tags:r.tags||[],favorite:r.favorite||false,originalSize:r.original_size||0};
+    return{id:r.id,title:r.title||'',description:r.description||'',date:r.photo_date,isVideo:!!r.is_video,dataUrl:r.storage_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.storage_path:'',thumbnailDataUrl:r.thumb_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.thumb_path:r.storage_path?CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+r.storage_path:'',tags:r.tags||[],favorite:r.favorite||false,originalSize:r.original_size||0};
   },
   addPhoto(p) { return this._fetch('POST','/rest/v1/photos',{id:p.id,title:p.title,description:p.description,photo_date:p.date,storage_path:p._sp,thumb_path:p._tp,tags:p.tags,favorite:p.favorite,original_size:p.originalSize,is_video:!!p.isVideo}); },
   updatePhoto(id,u) { const r={};if(u.favorite!==undefined)r.favorite=u.favorite;if(u.title!==undefined)r.title=u.title;if(u.tags!==undefined)r.tags=u.tags;return this._fetch('PATCH','/rest/v1/photos?id=eq.'+encodeURIComponent(id),r); },
@@ -877,7 +877,7 @@ function captureVideoThumb(file){
 }
 
 function showPhotoForm(pid,pp,tp,isVideo) {
-  const previewUrl=CFG.SUPABASE_URL+'/storage/v1/object/public/'+tp;
+  const previewUrl=CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+tp;
   const previewHtml=isVideo
     ? '<div style="position:relative;display:inline-block"><img src="'+previewUrl+'" style="border-radius:12px;max-height:200px" alt="预览"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:1.25rem;color:#fff">▶</div></div>'
     : '<div style="text-align:center;margin-bottom:16px"><img src="'+previewUrl+'" style="border-radius:12px;max-height:200px" alt="预览"></div>';
