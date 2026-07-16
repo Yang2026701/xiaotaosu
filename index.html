@@ -253,6 +253,10 @@ input:focus,textarea:focus,select:focus{outline:none}
 .hr-add:active{border-color:#FFA07A}
 .hr-add-icon{font-size:1.5rem;color:#FFA07A;margin-bottom:4px}
 .hr-add-text{font-size:.85rem;color:#BCAAA4}
+.hr-file{display:inline-flex;align-items:center;gap:4px;background:#F5F5F5;padding:4px 10px;border-radius:8px;font-size:.75rem;color:#42A5F5;margin-top:6px;cursor:pointer;transition:background .15s}
+.hr-file:active{background:#E3F2FD}
+.hr-file-icon{font-size:.9rem}
+.hr-file-input{display:none}
 
 /* Moods */
 .moods{display:flex;gap:8px;flex-wrap:wrap}
@@ -485,9 +489,9 @@ const API = {
   addDiary(e) { return this._fetch('POST','/rest/v1/diary_entries',{id:e.id,entry_date:e.date,title:e.title,content:e.content,mood:e.mood,photo_ids:e.photoIds,tags:e.tags}); },
   updateDiary(id,u) { return this._fetch('PATCH','/rest/v1/diary_entries?id=eq.'+encodeURIComponent(id),{entry_date:u.date,title:u.title,content:u.content,mood:u.mood,tags:u.tags}); },
   deleteDiary(id) { return this._fetch('DELETE','/rest/v1/diary_entries?id=eq.'+encodeURIComponent(id)); },
-  getHealth() { return this._fetch('GET','/rest/v1/health_records?select=*&order=record_date.asc').then(d=>(d||[]).map(r=>({id:r.id,recordType:r.record_type,title:r.title,date:r.record_date,ageDays:r.age_days,notes:r.notes,isCompleted:r.is_completed}))); },
-  addHealth(h) { return this._fetch('POST','/rest/v1/health_records',{id:h.id,record_type:h.recordType,title:h.title,record_date:h.date,age_days:h.ageDays,notes:h.notes,is_completed:h.isCompleted}); },
-  updateHealth(id,u) { const r={};if(u.isCompleted!==undefined)r.is_completed=u.isCompleted;if(u.title!==undefined)r.title=u.title;if(u.date!==undefined)r.record_date=u.date;if(u.notes!==undefined)r.notes=u.notes;return this._fetch('PATCH','/rest/v1/health_records?id=eq.'+encodeURIComponent(id),r); },
+  getHealth() { return this._fetch('GET','/rest/v1/health_records?select=*&order=record_date.asc').then(d=>(d||[]).map(r=>({id:r.id,recordType:r.record_type,title:r.title,date:r.record_date,ageDays:r.age_days,notes:r.notes,isCompleted:r.is_completed,filePath:r.file_path||'',fileName:r.file_name||''}))); },
+  addHealth(h) { return this._fetch('POST','/rest/v1/health_records',{id:h.id,record_type:h.recordType,title:h.title,record_date:h.date,age_days:h.ageDays,notes:h.notes,is_completed:h.isCompleted,file_path:h.filePath||'',file_name:h.fileName||''}); },
+  updateHealth(id,u) { const r={};if(u.isCompleted!==undefined)r.is_completed=u.isCompleted;if(u.title!==undefined)r.title=u.title;if(u.date!==undefined)r.record_date=u.date;if(u.notes!==undefined)r.notes=u.notes;if(u.filePath!==undefined)r.file_path=u.filePath;if(u.fileName!==undefined)r.file_name=u.fileName;return this._fetch('PATCH','/rest/v1/health_records?id=eq.'+encodeURIComponent(id),r); },
   deleteHealth(id) { return this._fetch('DELETE','/rest/v1/health_records?id=eq.'+encodeURIComponent(id)); }
 };
 
@@ -1562,6 +1566,7 @@ function renderHealth(){
       '<span class="hr-date">'+U.fmtDate(r.date)+' · '+(r.ageDays||0)+'天</span></div>'+
       '<div class="hr-title">'+U.esc(r.title)+'</div>'+
       (r.notes?'<div class="hr-notes">'+U.esc(r.notes)+'</div>':'')+
+      (r.filePath?'<div class="hr-file" onclick="window.open(\''+CFG.SUPABASE_URL+'/storage/v1/object/public/media/'+U.esc(r.filePath)+'\',\'_blank\')"><span class="hr-file-icon">📎</span> '+U.esc(r.fileName||'查看附件')+'</div>':'')+
       (r._source==='record'?'<div class="hr-actions">'+
         '<button class="btn btn-s btn-sm btn-hr-del" data-id="'+r.id+'">删除</button></div>':
         (r._source==='auto'?'<div class="hr-actions">'+
@@ -1589,14 +1594,30 @@ function showHealthForm(){
   const html='<div class="fg"><label class="fl">类型</label><select class="fi" id="hr-type"><option value="vaccine">💉 疫苗接种</option><option value="checkup">🏥 体检</option><option value="illness">🤒 生病</option><option value="medication">💊 用药</option></select></div>'+
     '<div class="fg"><label class="fl">标题</label><input type="text" class="fi" id="hr-title" placeholder="例如：五联疫苗第一针"></div>'+
     '<div class="fg"><label class="fl">日期</label><input type="date" class="fi" id="hr-date" value="'+today+'"></div>'+
-    '<div class="fg"><label class="fl">备注</label><textarea class="ft" id="hr-notes" rows="2" placeholder="医生建议、反应等..."></textarea></div>';
+    '<div class="fg"><label class="fl">备注</label><textarea class="ft" id="hr-notes" rows="2" placeholder="医生建议、反应等..."></textarea></div>'+
+    '<div class="fg"><label class="fl">上传附件（体检报告、疫苗本照片等）</label><input type="file" class="hr-file-input" id="hr-file-upload" accept="*"><button type="button" class="btn btn-s btn-sm" id="hr-file-btn">选择文件</button> <span style="font-size:.75rem;color:#BCAAA4" id="hr-file-name">未选择文件</span></div>';
+  let healthFile=null;
   showModal('添加健康记录',html,async()=>{
     const type=$('#hr-type').value,title=$('#hr-title').value.trim(),date=$('#hr-date').value,notes=$('#hr-notes').value.trim();
     if(!title){toast('请输入标题','err');return false;}
     if(!date){toast('请选择日期','err');return false;}
     const birth=appData.settings.birthDate,ageDays=U.age(birth,date).totalDays;
-    try{await API.addHealth({id:U.genId('h'),recordType:type,title,date,ageDays,notes,isCompleted:true});toast('已添加','ok');celebrate();return true;}
+    const hid=U.genId('h');
+    let filePath='',fileName='';
+    // Upload file if selected
+    if(healthFile){
+      const fd=new FormData();fd.append('file',healthFile,hid+'-'+healthFile.name);
+      try{filePath=await uploadFileDirect('health/'+hid+'-'+healthFile.name,fd);fileName=healthFile.name;}
+      catch(e){toast('附件上传失败: '+e.message,'err');return false;}
+    }
+    try{await API.addHealth({id:hid,recordType:type,title,date,ageDays,notes,isCompleted:true,filePath,fileName});toast('已添加','ok');celebrate();return true;}
     catch(e){toast('保存失败: '+e.message,'err');return false;}
+  },()=>{
+    // On modal open, bind file input
+    $('#hr-file-btn').addEventListener('click',()=>{$('#hr-file-upload').click();});
+    $('#hr-file-upload').addEventListener('change',function(){
+      if(this.files[0]){healthFile=this.files[0];$('#hr-file-name').textContent=healthFile.name+' ('+(healthFile.size/1024).toFixed(0)+'KB)';}
+    });
   });
 }
 
