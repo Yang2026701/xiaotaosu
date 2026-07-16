@@ -819,24 +819,34 @@ function initPhotoInput() {
     e.target.value='';
   });
 
-  // Video input
+  // Video input (with auto-compression)
   $('#video-input').addEventListener('change', async function(e) {
     const file=e.target.files[0];if(!file)return;
     if(!file.type.startsWith('video/')){toast('请选择视频文件','err');e.target.value='';return;}
-    if(file.size>50*1024*1024){toast('视频不能超过50MB','err');e.target.value='';return;}
-    toast('正在处理视频...','');
+    if(file.size>500*1024*1024){toast('视频不能超过500MB','err');e.target.value='';return;}
+
+    let uploadBlob=null;
+    const MAX_TARGET=30*1024*1024; // Target ~30MB, compress if larger
+    const pid=U.genId('p');
 
     try{
-      const pid=U.genId('p');
-      // Capture thumbnail from video
+      if(file.size<=MAX_TARGET){
+        toast('正在上传视频...','');
+        uploadBlob=await fetch(URL.createObjectURL(file)).then(r=>r.blob());
+      }else{
+        const sizeMB=(file.size/1048576).toFixed(0);
+        toast('视频较大('+sizeMB+'MB)，正在压缩...','');
+        uploadBlob=await compressVideo(file, 720, 2500000, MAX_TARGET);
+        const newMB=(uploadBlob.size/1048576).toFixed(1);
+        toast('已压缩至 '+newMB+'MB，正在上传...','');
+      }
       const thumbDataUrl=await captureVideoThumb(file);
-      // Upload video + thumbnail in parallel
-      const vid= await fetch(URL.createObjectURL(file)).then(r=>r.blob());
       const thumbBlob=await fetch(thumbDataUrl).then(r=>r.blob());
-      const formDataV=new FormData();formDataV.append('file',vid,pid+'.mp4');
+      const ext=uploadBlob.type.includes('mp4')?'mp4':'webm';
+      const formDataV=new FormData();formDataV.append('file',uploadBlob,pid+'.'+ext);
       const formDataT=new FormData();formDataT.append('file',thumbBlob,pid+'.jpg');
       const [vp,tp]=await Promise.all([
-        uploadFileDirect('videos/'+pid+'.mp4',formDataV),
+        uploadFileDirect('videos/'+pid+'.'+ext,formDataV),
         uploadFileDirect('thumbs/'+pid+'.jpg',formDataT)
       ]);
       showPhotoForm(pid,vp,tp,true);
@@ -845,7 +855,57 @@ function initPhotoInput() {
   });
 }
 
-// Direct upload helper (bypasses the dataURL conversion)
+// Video compression (Canvas + MediaRecorder)
+async function compressVideo(file, maxHeight, bitrate, maxSize){
+  const video=document.createElement('video');
+  video.preload='metadata';video.muted=true;video.playsInline=true;
+  return new Promise((ok,no)=>{
+    video.onloadedmetadata=()=>{
+      let w=video.videoWidth, h=video.videoHeight;
+      const scale=Math.min(1, maxHeight/h);
+      w=Math.round(w*scale);h=Math.round(h*scale);
+      if(w%2)w--;if(h%2)h--;
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      const stream=canvas.captureStream(30);
+      const chunks=[];
+      let mime='video/webm;codecs=vp8';
+      if(MediaRecorder.isTypeSupported('video/webm;codecs=vp9'))mime='video/webm;codecs=vp9';
+      const recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:bitrate});
+      recorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+      recorder.onstop=()=>{
+        const blob=new Blob(chunks,{type:mime});
+        if(blob.size>maxSize){
+          const ratio=maxSize/blob.size*0.8;
+          const retry=document.createElement('video');
+          retry.preload='metadata';retry.muted=true;retry.playsInline=true;
+          retry.src=URL.createObjectURL(blob);
+          retry.onloadedmetadata=()=>{
+            const chunks2=[];
+            const stream2=canvas.captureStream(30);
+            const rec2=new MediaRecorder(stream2,{mimeType:mime,videoBitsPerSecond:Math.round(bitrate*ratio)});
+            rec2.ondataavailable=e=>{if(e.data.size>0)chunks2.push(e.data);};
+            rec2.onstop=()=>{const b2=new Blob(chunks2,{type:mime});ok(b2);URL.revokeObjectURL(retry.src);};
+            rec2.start(1000);retry.currentTime=0;retry.play();
+            (function draw2(){if(rec2.state==='recording'){ctx.drawImage(retry,0,0,w,h);requestAnimationFrame(draw2)}else{rec2.stop()}})();
+          };
+          retry.onerror=()=>ok(blob);
+          return;
+        }
+        ok(blob);URL.revokeObjectURL(video.src);
+      };
+      recorder.onerror=()=>no(new Error('压缩失败'));
+      recorder.start(1000);
+      video.currentTime=0;video.play();
+      (function drawFrame(){if(recorder.state==='recording'){ctx.drawImage(video,0,0,w,h);requestAnimationFrame(drawFrame)}else{recorder.stop()}})();
+    };
+    video.onerror=()=>no(new Error('无法读取视频'));
+    video.src=URL.createObjectURL(file);
+  });
+}
+
+// Direct upload helper
 async function uploadFileDirect(path,formData){
   const res=await fetch(CFG.SUPABASE_URL+'/storage/v1/object/'+CFG.BUCKET+'/'+path,{
     method:'POST',
