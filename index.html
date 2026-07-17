@@ -471,7 +471,6 @@ input:focus,textarea:focus,select:focus{outline:none}
   <input type="file" id="video-input" accept="video/*" hidden>
 </div>
 
-<script src="/xiaotaosu/chart.min.js"></script>
 <script>
 // ============================================================
 //  COMPLETE APP
@@ -1504,109 +1503,112 @@ function renderGrowth(){
 function stile(icon,label,value,unit,ds,pct){var pctHtml='';if(pct&&value!=='--'){var color=pct>=15&&pct<=85?'#81C784':pct<3||pct>97?'#EF9A9A':'#FFD54F';pctHtml='<div style="font-size:.7rem;color:'+color+';margin-top:2px;font-weight:500">P'+pct+'</div>';}return'<div class="stat-tile"><div style="font-size:1.5rem;margin-bottom:4px">'+icon+'</div><div class="stat-val">'+(value!=='--'?value:'--')+'<span class="u">'+(value!=='--'?unit:'')+'</span></div><div class="stat-lbl">'+label+'</div>'+pctHtml+(ds?'<div class="stat-lbl" style="color:#81C784">'+ds+'</div>':'')+'</div>';}
 function deltaS(c,p,u){if(c==null||p==null)return'';const d=c-p;return(d>=0?'+':'')+d.toFixed(1)+u+' 较上次';}
 
-function renderCharts(records,birth){
-  if(typeof Chart==='undefined'){
-    console.log('Chart.js loading, waiting...');
-    var retries=0,waitForChart=setInterval(function(){
-      retries++;
-      if(typeof Chart!=='undefined'){clearInterval(waitForChart);console.log('Chart.js ready after '+retries+' retries');renderCharts(records,birth);}
-      else if(retries>50){clearInterval(waitForChart);console.log('Chart.js timeout');}
-    },200);
-    return;
-  }
-  try{if(heightChart){heightChart.destroy();heightChart=null;}}catch(e){}
-  try{if(weightChart){weightChart.destroy();weightChart=null;}}catch(e){}
-  var maxAge=Math.max(730,0);records.forEach(function(r){if(r.ageInDays>maxAge)maxAge=r.ageInDays;});
+function drawCharts(records,birth){
+  function drawChart(canvasId, data, refP50, refP97, refP3, label, color, yMax){
+    var canvas=document.getElementById(canvasId);if(!canvas)return;
+    var ctx=canvas.getContext('2d');if(!ctx)return;
+    var W=canvas.offsetWidth||300,H=280;
+    canvas.width=W;canvas.height=H;
+    var pad={top:20,right:16,bottom:38,left:48};
+    var pw=W-pad.left-pad.right,ph=H-pad.top-pad.bottom;
+    var xMin=0,xMax=Math.max(730,data.length>0?data[data.length-1].x+30:730);
+    var yUseMax=Math.max(yMax,data.length>0?Math.max.apply(null,data.map(function(d){return d.y;}))+5:yMax);
+    var yMin=yUseMax<20?1:refP3.length>0&&refP3[0].y?refP3[0].y*0.85:Math.max(30,yUseMax-50);
 
-  var hData=[];records.forEach(function(r){if(r.height!=null)hData.push({x:r.ageInDays,y:r.height});});
-  var whoH=buildWHO(records,birth,'height');
+    function toX(x){return pad.left+(x-xMin)/xMax*pw;}
+    function toY(y){return pad.top+ph-(y-yMin)/(yUseMax-yMin)*ph;}
 
-  var c1=$('#ch');if(c1){
-    heightChart=new Chart(c1,{type:'line',data:{datasets:[
-      {label:'同月龄极高(前3%)',data:whoH.p97,borderColor:'rgba(215,204,200,0.6)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false,order:10},
-      {label:'正常偏高(P50~P97)',data:whoH.p85,borderColor:'rgba(215,204,200,0.35)',borderWidth:1,borderDash:[2,6],pointRadius:0,fill:{target:'+1',above:'rgba(129,199,132,0.06)'},order:10},
-      {label:'同月龄中等(中位线)',data:whoH.p50,borderColor:'#D7CCC8',borderWidth:1.5,borderDash:[8,4],pointRadius:0,fill:false,order:9},
-      {label:'正常偏低(P3~P50)',data:whoH.p15,borderColor:'rgba(215,204,200,0.35)',borderWidth:1,borderDash:[2,6],pointRadius:0,fill:{target:'+1',above:'rgba(255,140,105,0.05)'},order:10},
-      {label:'同月龄极低(后3%)',data:whoH.p3,borderColor:'rgba(215,204,200,0.6)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false,order:10},
-      {label:'小桃酥',data:hData,borderColor:'#FF8C69',backgroundColor:'#FF8C69',borderWidth:2.5,pointRadius:6,pointBackgroundColor:'#FF8C69',pointBorderColor:'#FFF',pointBorderWidth:2.5,pointHoverRadius:8,tension:.2,fill:false,order:1}
-    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'#4E342E',cornerRadius:8,callbacks:{label:function(ctx){return ctx.dataset.label+'：'+ctx.parsed.y+(ctx.dataset.label==='小桃酥'?' cm':'');}}}},scales:{x:{type:'linear',title:{display:true,text:'天数',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:0,max:maxAge+30},y:{title:{display:true,text:'身高(cm)',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:40,max:105}}}});
-  }
+    ctx.fillStyle='#FFFBF5';ctx.fillRect(0,0,W,H);
 
-  var wData=[];records.forEach(function(r){if(r.weight!=null)wData.push({x:r.ageInDays,y:r.weight});});
-  var whoW=buildWHO(records,birth,'weight');
-  var c2=$('#cw');if(c2){
-    weightChart=new Chart(c2,{type:'line',data:{datasets:[
-      {label:'同月龄极高(前3%)',data:whoW.p97,borderColor:'rgba(215,204,200,0.6)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false,order:10},
-      {label:'正常偏高(P50~P97)',data:whoW.p85,borderColor:'rgba(215,204,200,0.35)',borderWidth:1,borderDash:[2,6],pointRadius:0,fill:{target:'+1',above:'rgba(129,199,132,0.06)'},order:10},
-      {label:'同月龄中等(中位线)',data:whoW.p50,borderColor:'#D7CCC8',borderWidth:1.5,borderDash:[8,4],pointRadius:0,fill:false,order:9},
-      {label:'正常偏低(P3~P50)',data:whoW.p15,borderColor:'rgba(215,204,200,0.35)',borderWidth:1,borderDash:[2,6],pointRadius:0,fill:{target:'+1',above:'rgba(255,140,105,0.05)'},order:10},
-      {label:'同月龄极低(后3%)',data:whoW.p3,borderColor:'rgba(215,204,200,0.6)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false,order:10},
-      {label:'小桃酥',data:wData,borderColor:'#81C784',backgroundColor:'#81C784',borderWidth:2.5,pointRadius:6,pointBackgroundColor:'#81C784',pointBorderColor:'#FFF',pointBorderWidth:2.5,pointHoverRadius:8,tension:.2,fill:false,order:1}
-    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'#4E342E',cornerRadius:8,callbacks:{label:function(ctx){return ctx.dataset.label+'：'+ctx.parsed.y+(ctx.dataset.label==='小桃酥'?' kg':'');}}}},scales:{x:{type:'linear',title:{display:true,text:'天数',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:0,max:maxAge+30},y:{title:{display:true,text:'体重(kg)',color:'#BCAAA4'},grid:{color:'#EDE7E0'},ticks:{color:'#BCAAA4',font:{size:11}},min:1,max:20}}}});
-  }
-}
+    // Grid lines
+    ctx.strokeStyle='#EDE7E0';ctx.lineWidth=0.5;
+    for(var i=0;i<=5;i++){var gy=pad.top+ph*i/5;ctx.beginPath();ctx.moveTo(pad.left,gy);ctx.lineTo(pad.left+pw,gy);ctx.stroke();}
+    for(var i=0;i<=Math.min(xMax/30,24);i++){var dx=i*30;if(dx<=xMax){var gx=toX(dx);ctx.beginPath();ctx.moveTo(gx,pad.top);ctx.lineTo(gx,pad.top+ph);ctx.stroke();}}
 
-function getPercentile(ageDays,value,metric){
-  // Find where the value falls among WHO reference percentiles
-  var refs=[3,15,50,85,97];
-  for(var i=0;i<WHO_GIRLS.length-1;i++){
-    var prev=WHO_GIRLS[i],next=WHO_GIRLS[i+1];
-    var prevDays=Math.round(prev[0]*30.4375),nextDays=Math.round(next[0]*30.4375);
-    if(ageDays>=prevDays&&ageDays<nextDays){
-      var t=(ageDays-prevDays)/(nextDays-prevDays);
-      var colStart,idx;
-      if(metric==='height'){colStart=1;idx=0;}
-      else if(metric==='weight'){colStart=6;idx=0;}
-      else if(metric==='head'){colStart=11;idx=0;}
-      else return null;
-      // Interpolate each percentile line at this age
-      var p50Ref=prev[colStart+2]+t*(next[colStart+2]-prev[colStart+2]);
-      // Determine which percentile band the value falls in
-      for(var j=0;j<refs.length;j++){
-        var pCol=colStart+(metric==='head'&&j>0?j===2?4:0:j);
-        if(metric==='head'&&j>0)return'≈50';
-        var refVal=prev[pCol]+t*(next[pCol]-prev[pCol]);
-        if(value<=refVal)return j>0?refs[j-1]+'-'+refs[j]:'<'+refs[0];
-      }
-      return '>'+refs[refs.length-1];
+    // P3-P97 band
+    if(refP3&&refP97&&refP3.length>1){
+      ctx.fillStyle='rgba(215,204,200,0.15)';
+      ctx.beginPath();
+      for(var i=0;i<Math.min(refP3.length,refP97.length);i++)ctx.lineTo(toX(refP3[i].x),toY(refP3[i].y));
+      for(var i=Math.min(refP3.length,refP97.length)-1;i>=0;i--)ctx.lineTo(toX(refP97[i].x),toY(refP97[i].y));
+      ctx.closePath();ctx.fill();
     }
+
+    // Ref lines
+    ctx.save();ctx.strokeStyle='rgba(215,204,200,0.5)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+    [refP97,refP3].forEach(function(ref){
+      if(ref&&ref.length>1){ctx.beginPath();ctx.moveTo(toX(ref[0].x),toY(ref[0].y));for(var i=1;i<ref.length;i++)ctx.lineTo(toX(ref[i].x),toY(ref[i].y));ctx.stroke();}
+    });
+    ctx.restore();
+
+    if(refP50&&refP50.length>1){
+      ctx.save();ctx.strokeStyle='#D7CCC8';ctx.lineWidth=1.5;ctx.setLineDash([6,3]);
+      ctx.beginPath();ctx.moveTo(toX(refP50[0].x),toY(refP50[0].y));
+      for(var i=1;i<refP50.length;i++)ctx.lineTo(toX(refP50[i].x),toY(refP50[i].y));
+      ctx.stroke();ctx.restore();
+    }
+
+    // Data line
+    if(data.length>0){
+      ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.setLineDash([]);
+      ctx.beginPath();ctx.moveTo(toX(data[0].x),toY(data[0].y));
+      for(var i=1;i<data.length;i++)ctx.lineTo(toX(data[i].x),toY(data[i].y));
+      ctx.stroke();ctx.restore();
+
+      // Data dots
+      data.forEach(function(d){
+        ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(toX(d.x),toY(d.y),5,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle=color;ctx.beginPath();ctx.arc(toX(d.x),toY(d.y),3.5,0,Math.PI*2);ctx.fill();
+      });
+    }
+
+    // Axes
+    ctx.strokeStyle='#BCAAA4';ctx.lineWidth=1;ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(pad.left,pad.top);ctx.lineTo(pad.left,pad.top+ph);ctx.lineTo(pad.left+pw,pad.top+ph);ctx.stroke();
+
+    // Y ticks
+    ctx.fillStyle='#BCAAA4';ctx.font='10px sans-serif';ctx.textAlign='right';
+    for(var i=0;i<=5;i++){var val=(yMin+(yUseMax-yMin)*i/5).toFixed(1);ctx.fillText(val,pad.left-6,pad.top+ph*(1-i/5)+4);}
+
+    // X ticks
+    ctx.textAlign='center';
+    for(var i=0;i<=Math.min(xMax/30,24);i++){var dx=i*30;if(dx<=xMax)ctx.fillText(dx+'d',toX(dx),pad.top+ph+14);}
+
+    // Chart title
+    ctx.fillStyle='#8D6E63';ctx.font='11px sans-serif';ctx.textAlign='center';
+    ctx.fillText(label,pad.left+pw/2,pad.top+ph+30);
+
+    // Legend
+    ctx.fillStyle=color;ctx.fillRect(pad.left+8,pad.top+4,10,10);
+    ctx.fillStyle='#8D6E63';ctx.font='10px sans-serif';ctx.textAlign='left';
+    ctx.fillText('小桃酥',pad.left+22,pad.top+12);
+    ctx.strokeStyle='#D7CCC8';ctx.setLineDash([4,4]);ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad.left+70,pad.top+9);ctx.lineTo(pad.left+100,pad.top+9);ctx.stroke();
+    ctx.setLineDash([]);ctx.fillText('P50',pad.left+104,pad.top+12);
   }
-  return null;
+
+  var hData=[],wData=[];
+  records.forEach(function(r){
+    if(r.height!=null)hData.push({x:r.ageInDays,y:r.height});
+    if(r.weight!=null)wData.push({x:r.ageInDays,y:r.weight});
+  });
+
+  var htP50=[],htP97=[],htP3=[],wtP50=[],wtP97=[],wtP3=[];
+  var maxAge=Math.max(730,hData.length>0?hData[hData.length-1].x:0);
+  WHO_GIRLS.forEach(function(row){
+    var days=Math.round(row[0]*30.4375);if(days>maxAge+120)return;
+    htP3.push({x:days,y:row[1]});htP50.push({x:days,y:row[3]});htP97.push({x:days,y:row[5]});
+    wtP3.push({x:days,y:row[6]});wtP50.push({x:days,y:row[8]});wtP97.push({x:days,y:row[10]});
+  });
+
+  // Deferred draw to ensure canvas is in DOM
+  setTimeout(function(){drawChart('ch',hData,htP50,htP97,htP3,'身高生长曲线','#FF8C69',105);},300);
+  setTimeout(function(){drawChart('cw',wData,wtP50,wtP97,wtP3,'体重生长曲线','#81C784',20);},300);
 }
 
-function assessLine(pct,icon,label,value){
-  var color='#81C784',comment='正常范围（P15-P85）';
-  if(!pct){color='#BCAAA4';comment='数据不足';}
-  else if(pct.indexOf('<')===0||pct.indexOf('>')===0){color='#EF9A9A';comment=pct.indexOf('<')===0?'低于P3，建议咨询医生':'高于P97';}
-  else if(pct.indexOf('-')>0){var parts=pct.split('-');var lo=parseInt(parts[0]),hi=parseInt(parts[1]);color=hi<=97?'#81C784':lo>=85?'#FFD54F':'#FFD54F';comment=lo+'%-'+hi+'%百分位';}
-  return'<div class="assess-row" style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F5F3F0"><span style="font-size:1.2rem">'+icon+'</span><span style="font-size:.9rem;flex:1">'+label+'</span><span style="font-size:.85rem;font-weight:600;color:'+color+'">'+value+'</span><span style="font-size:.7rem;color:#BCAAA4">'+comment+'</span></div>';
-}
+// Keep old function name
+var renderCharts=drawCharts;
 
-function getAssessmentSummary(htPct,wtPct,ageDays){
-  var lines=[];
-  // Height assessment
-  if(htPct){
-    if(htPct.indexOf('<3')>=0)lines.push('⚠️ 身高低于第3百分位，建议咨询儿科医生进行生长评估。');
-    else if(htPct.indexOf('>97')>=0)lines.push('📈 身高高于第97百分位，生长速度较快，继续保持监测。');
-    else if(htPct.indexOf('15')>=0||htPct.indexOf('50')>=0||htPct.indexOf('85')>=0)lines.push('✅ 身高在正常范围（P15-P85），符合WHO和中国卫健委生长标准。');
-    else lines.push('💡 身高在参考范围内。');
-  }
-  // Weight assessment
-  if(wtPct){
-    if(wtPct.indexOf('<3')>=0)lines.push('⚠️ 体重低于第3百分位，建议关注喂养和营养摄入，咨询医生。');
-    else if(wtPct.indexOf('>97')>=0)lines.push('📈 体重高于第97百分位，建议关注喂养结构和活动量。');
-    else if(wtPct.indexOf('15')>=0||wtPct.indexOf('50')>=0||wtPct.indexOf('85')>=0)lines.push('✅ 体重在正常范围，喂养良好。');
-    else lines.push('💡 体重在参考范围内。');
-  }
-  // Overall
-  if(lines.length===0)lines.push('添加更多测量数据以获取发育评估。');
-  else lines.push('📋 定期监测生长曲线趋势比单次测量更重要，建议每月测量1次。');
-  return lines.map(function(l){return'<div style="font-size:.85rem;line-height:1.6;margin-bottom:4px">'+l+'</div>';}).join('');
-}
-
-// Growth assessment card CSS
-var gaStyle=document.getElementById('ga-style');
-if(!gaStyle){gaStyle=document.createElement('style');gaStyle.id='ga-style';gaStyle.textContent='.growth-assess{background:linear-gradient(135deg,#F8FFF5,#FFFBF5,#FFF5F8);border-radius:16px;padding:16px;margin-bottom:20px;border:1px solid rgba(129,199,132,.15)}.growth-assess h3{font-size:1rem;font-weight:600;color:#66BB6A;margin-bottom:10px}.growth-assess-summary{padding:12px;background:rgba(255,255,255,.8);border-radius:10px;margin-top:8px}';document.head.appendChild(gaStyle);}
 
 function showGrForm(){
   const today=U.today(),birth=appData.settings.birthDate;
@@ -2446,7 +2448,8 @@ function emptyState(icon,title,desc){return'<div class="empty"><div class="empty
 // ---- Chart.js loaded from local file (no CDN dependency) ----
 var _chartJSLoaded=typeof Chart!=='undefined';
 
-// Chart.js loaded locally — no CDN needed
+// Skip old renderCharts wrapper — use simple inline chart draw
+
 </script>
 </body>
 </html>
