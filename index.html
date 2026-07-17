@@ -1010,13 +1010,28 @@ function initWelcomeParticles() {
 // ============================================================
 // ============================================================
 
+// Route registry — single source of truth for all tabs
+var ROUTES = [
+  {key:'album',     render:renderAlbum,      fab:'menu'},
+  {key:'milestones',render:renderMilestones, fab:'ms'},
+  {key:'growth',    render:renderGrowth,     fab:'gr'},
+  {key:'diary',     render:renderDiary,      fab:'dy'},
+  {key:'parenting', render:renderParenting,  fab:null},
+  {key:'daily',     render:renderDaily,      fab:null, hideFab:true},
+  {key:'weekly',    render:renderWeekly,     fab:null, hideFab:true},
+  {key:'health',    render:renderHealth,     fab:null},
+  {key:'settings',  render:renderSettings,   fab:null, hideFab:true}
+];
+function byRoute(key){return ROUTES.find(function(r){return r.key===key;});}
+function isValidTab(key){return !!byRoute(key);}
+
 function setupMainApp() {
   $('#main').hidden = false;
   updateTitle();
   updateAge();
 
   const hash = location.hash.replace('#','');
-  activeTab = ['album','milestones','growth','diary','daily','weekly','parenting','health','settings'].includes(hash) ? hash : 'album';
+  activeTab = isValidTab(hash) ? hash : 'album';
   location.hash = activeTab;
   navigate(activeTab);
 
@@ -1027,7 +1042,7 @@ function setupMainApp() {
 
   window.addEventListener('hashchange', async () => {
     const tab = location.hash.replace('#','');
-    if (['album','milestones','growth','diary','daily','weekly','parenting','health','settings'].includes(tab)) {
+    if (isValidTab(tab)) {
       await reloadData();
       navigate(tab);
     }
@@ -1061,7 +1076,7 @@ function navigate(tab) {
   $$('.page').forEach(p=>p.hidden=true);
   const pg=$('#page-'+tab); if(pg)pg.hidden=false;
   $$('#tabs .tab').forEach(b=>{b.classList.toggle('active',b.dataset.tab===tab);});
-  $('#fab').classList.toggle('hidden', tab==='settings'||tab==='daily'||tab==='weekly');
+  var rt=byRoute(tab); $('#fab').classList.toggle('hidden', rt&&rt.hideFab);
   if(fabMenuOpen)closeFabMenu();
   if(activeTab!==tab&&activeTab==='growth'){if(heightChart)heightChart.destroy();if(weightChart)weightChart.destroy();}
   activeTab=tab;
@@ -1074,17 +1089,7 @@ function navigate(tab) {
 }
 
 function renderPage() {
-  switch(activeTab){
-    case'album':renderAlbum();break;
-    case'milestones':renderMilestones();break;
-    case'growth':renderGrowth();break;
-    case'diary':renderDiary();break;
-    case'parenting':renderParenting();break;
-    case'daily':renderDaily();break;
-    case'weekly':renderWeekly();break;
-    case'health':renderHealth();break;
-    case'settings':renderSettings();break;
-  }
+  var r=byRoute(activeTab); if(r&&r.render) r.render();
 }
 
 function updateTitle() { $('#btitle').textContent=(appData.settings.babyName||'宝宝')+'的成长记录'; }
@@ -1146,19 +1151,16 @@ function updateFabMenuPos(){
   fabMenu.style.bottom=(window.innerHeight-fabRect.top+16)+'px';
 }
 function handleFab(e) {
-  switch(activeTab){
-    case'album':
-      if(fabMenuOpen){closeFabMenu();return;}
-      updateFabMenuPos();
-      fabMenu.classList.remove('hidden');
-      fabMenuOpen=true;
-      $('#fab').textContent='✕';
-      break;
-    case'milestones':showMsForm();break;
-    case'growth':$('#btn-add-gr')?.click();break;
-    case'diary':showDiaryForm();break;
-    case'weekly':break;
-  }
+  var r=byRoute(activeTab); if(!r||!r.fab) return;
+  if(r.fab==='menu'){
+    if(fabMenuOpen){closeFabMenu();return;}
+    updateFabMenuPos();
+    fabMenu.classList.remove('hidden');
+    fabMenuOpen=true;
+    $('#fab').textContent='✕';
+  } else if(r.fab==='ms'){showMsForm();}
+  else if(r.fab==='gr'){$('#btn-add-gr')?.click();}
+  else if(r.fab==='dy'){showDiaryForm();}
 }
 function closeFabMenu(){
   fabMenu.classList.add('hidden');
