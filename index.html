@@ -97,9 +97,12 @@ input:focus,textarea:focus,select:focus{outline:none}
 .bar-sub{font-size:.7rem;color:#A09085}
 .btn-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.25rem}
 .btn-icon:active{background:#FFEDE6}
-.bar-weekly-btn{display:flex;align-items:center;gap:4px;padding:6px 14px 6px 10px;border-radius:20px;font-size:.95rem;font-weight:500;color:#8D6E63;background:rgba(255,160,122,.08);transition:transform .15s}
-.bar-weekly-btn:active{transform:scale(.94);background:rgba(255,160,122,.15)}
-.bar-weekly-label{font-size:.85rem;letter-spacing:.5px}
+
+/* Weekly report strip below header */
+.bar-weekly-strip{display:flex;align-items:center;gap:6px;padding:7px 16px;background:rgba(255,251,245,.6);border-bottom:1px solid rgba(240,232,224,.4);font-size:.8rem;color:#8D6E63;cursor:pointer;transition:background .15s}
+.bar-weekly-strip:active{background:rgba(255,160,122,.1)}
+.bar-weekly-strip .bar-weekly-label{font-weight:500;color:#5D4037}
+.bar-weekly-strip .bar-weekly-arrow{color:#FFA07A;margin-left:auto}
 /* Content */
 #content{flex:1;padding:16px}
 .page{animation:pgIn .2s ease}
@@ -605,9 +608,11 @@ input:focus,textarea:focus,select:focus{outline:none}
         <p class="bar-sub" id="bage">--</p>
       </div>
     </div>
-    <button class="bar-weekly-btn" id="bweekly">📰<span class="bar-weekly-label">周报</span></button>
     <button class="btn-icon" id="bsettings">⚙️</button>
   </header>
+  <div class="bar-weekly-strip" id="bweekly-strip" onclick="location.hash='weekly'">
+    <span>📰</span><span class="bar-weekly-label">成长周报</span><span id="bweekly-range"></span><span class="bar-weekly-arrow">→</span>
+  </div>
 
   <main id="content">
     <section id="page-album" class="page" hidden></section>
@@ -1032,6 +1037,7 @@ function setupMainApp() {
   $('#main').hidden = false;
   updateTitle();
   updateAge();
+  updateWeeklyStrip();
 
   const hash = location.hash.replace('#','');
   activeTab = isValidTab(hash) ? hash : 'album';
@@ -1052,7 +1058,6 @@ function setupMainApp() {
   });
 
   $('#bsettings').addEventListener('click', () => { location.hash = 'settings'; });
-  $('#bweekly').addEventListener('click', () => { location.hash = 'weekly'; });
   $('#fab').addEventListener('click', handleFab);
 
   // Auto-start music on first app entry
@@ -1085,6 +1090,8 @@ function navigate(tab) {
   if(activeTab!==tab&&activeTab==='growth'){if(heightChart)heightChart.destroy();if(weightChart)weightChart.destroy();}
   activeTab=tab;
   renderPage();
+  // Hide weekly strip on weekly/settings pages
+  $('#bweekly-strip').style.display=(tab==='weekly'||tab==='settings')?'none':'flex';
   $('#content').scrollTop=0;
 }
 
@@ -1094,6 +1101,14 @@ function renderPage() {
 
 function updateTitle() { $('#btitle').textContent=(appData.settings.babyName||'宝宝')+'的成长记录'; }
 function updateAge() { const a=U.age(appData.settings.birthDate,U.today());$('#bage').textContent=U.fmtDate(appData.settings.birthDate)+' 出生 · 现在 '+a.text+' 啦';$('#bar-chip').textContent=a.text; }
+function updateWeeklyStrip(){
+  var today=U.today();var now=new Date(today+'T00:00:00');
+  var day=now.getDay();var monOffset=day===0?-6:1-day;
+  var mon=new Date(now);mon.setDate(now.getDate()+monOffset);
+  var sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  var label=(mon.getMonth()+1)+'/'+mon.getDate()+' - '+(sun.getMonth()+1)+'/'+sun.getDate();
+  var el=document.getElementById('bweekly-range');if(el)el.textContent=label;
+}
 
 // Toast
 function toast(msg,type) {
