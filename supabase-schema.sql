@@ -214,3 +214,22 @@ CREATE POLICY "anon_all_guesses" ON milestone_guesses FOR ALL TO anon USING (tru
 -- ============================================================
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+
+-- ============================================================
+-- 10. 统一事件视图 (所有模块数据聚合)
+-- ============================================================
+CREATE OR REPLACE VIEW events AS
+SELECT id, photo_date AS event_date, NULL::text AS event_time, title,
+       COALESCE(description,'') AS notes, 'photo' AS event_type, NULL::text AS ref_type FROM photos
+UNION ALL
+SELECT id, milestone_date, NULL, title, COALESCE(notes,''), 'milestone', type FROM milestones
+UNION ALL
+SELECT id, record_date, NULL, '生长记录', COALESCE(notes,''), 'growth', NULL FROM growth_records
+UNION ALL
+SELECT id, entry_date, NULL, title, COALESCE(content,''), 'diary', mood FROM diary_entries
+UNION ALL
+SELECT id, log_date, log_time, log_type, COALESCE(value_text,''), 'daily_log', log_type FROM daily_logs
+UNION ALL
+SELECT id, record_date, NULL, title, COALESCE(notes,''), 'health', record_type FROM health_records;
+
+GRANT SELECT ON events TO anon, authenticated, service_role;

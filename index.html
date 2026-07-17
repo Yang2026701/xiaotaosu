@@ -780,7 +780,8 @@ const API = {
   // Milestone guesses
   getGuesses() { return this._fetch('GET','/rest/v1/milestone_guesses?select=*'); },
   addGuess(g) { return this._fetch('POST','/rest/v1/milestone_guesses',{id:g.id,milestone_key:g.key,guesser_name:g.name,guessed_date:g.date}); },
-  deleteGuess(id) { return this._fetch('DELETE','/rest/v1/milestone_guesses?id=eq.'+encodeURIComponent(id)); }
+  deleteGuess(id) { return this._fetch('DELETE','/rest/v1/milestone_guesses?id=eq.'+encodeURIComponent(id)); },
+  getEvents() { return this._fetch('GET','/rest/v1/events?select=*&order=event_date.desc&limit=200'); }
 };
 
 // ---- Models ----
