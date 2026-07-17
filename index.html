@@ -37,59 +37,64 @@ input:focus,textarea:focus,select:focus{outline:none}
 }
 
 /* ===== LOCK SCREEN ===== */
-#lock{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:linear-gradient(170deg,#FFF0EB,#FFE0D5,#FFD1C4,#FFF0F3);transition:opacity .4s}
+#lock{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:linear-gradient(175deg,#FEF9F5,#FFF3EC,#FFE8DD,#FFF0F3,#FEF9F5);transition:opacity .4s}
 #lock canvas{position:absolute;inset:0;pointer-events:none}
 #lock.exit{opacity:0;pointer-events:none}
-.lock-inner{position:relative;z-index:1;text-align:center;padding:32px 24px;max-width:360px;width:100%}
-.lock-icon{font-size:4.5rem;display:block;margin-bottom:8px;animation:lkb 2.5s ease-in-out infinite}
+.lock-inner{position:relative;z-index:1;text-align:center;padding:40px 28px;max-width:340px;width:100%}
+.lock-icon{font-size:4.2rem;display:block;margin-bottom:6px;animation:lkb 2.5s ease-in-out infinite;filter:drop-shadow(0 8px 20px rgba(255,160,122,.35))}
 @keyframes lkb{0%,100%{transform:translateY(0)scale(1)}20%{transform:translateY(-14px)scale(1.1)}40%{transform:translateY(0)}55%{transform:translateY(-5px)scale(1.03)}70%{transform:translateY(0)}}
-.lock-title{font-size:2rem;font-weight:700;letter-spacing:3px;margin-bottom:2px}
-.lock-sub{font-size:.95rem;color:#8D6E63;margin-bottom:32px}
+.lock-title{font-size:2.6rem;font-weight:800;letter-spacing:6px;margin-bottom:2px;background:linear-gradient(135deg,#E8886A,#FFA07A,#FF8C69,#E8886A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.lock-sub{font-size:.95rem;color:#A09085;margin-bottom:32px;letter-spacing:2px}
 .lock-wrap{display:flex;gap:8px}
-.lock-input{flex:1;padding:14px 18px;border:2px solid rgba(255,160,122,.25);border-radius:16px;font-size:1.1rem;background:rgba(255,255,255,.7);color:#4E342E;letter-spacing:4px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.lock-input:focus{border-color:#FFA07A}
-.lock-input::placeholder{color:#D7CCC8;letter-spacing:1px;font-size:.95rem}
-.lock-btn{padding:14px 24px;border-radius:16px;background:linear-gradient(135deg,#FFA07A,#FF8C69);color:#fff;font-size:1rem;font-weight:600;letter-spacing:2px;box-shadow:0 4px 16px rgba(255,140,105,.3);white-space:nowrap;transition:transform .15s,opacity .15s}
-.lock-btn:active{transform:scale(.95)}
+.lock-input{flex:1;padding:15px 20px;border:1.5px solid rgba(255,160,122,.2);border-radius:18px;font-size:1.1rem;background:rgba(255,255,255,.65);color:#4E342E;letter-spacing:4px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 2px 12px rgba(180,140,120,.06);transition:border-color .2s,box-shadow .2s}
+.lock-input:focus{border-color:#FFA07A;box-shadow:0 2px 16px rgba(255,160,122,.15)}
+.lock-input::placeholder{color:#D7CCC8;letter-spacing:1px;font-size:.9rem}
+.lock-btn{padding:15px 28px;border-radius:18px;background:linear-gradient(135deg,#FFA07A,#FF8C69);color:#fff;font-size:.95rem;font-weight:600;letter-spacing:2px;box-shadow:0 4px 18px rgba(255,140,105,.3);white-space:nowrap;transition:transform .15s,opacity .15s,box-shadow .15s}
+.lock-btn:active{transform:scale(.95);box-shadow:0 2px 8px rgba(255,140,105,.2)}
 .lock-btn:disabled{opacity:.6}
-.lock-err{margin-top:12px;font-size:.85rem;color:#EF9A9A;min-height:20px}
+.lock-err{margin-top:14px;font-size:.82rem;color:#EF9A9A;min-height:20px}
 
 /* ===== WELCOME PAGE ===== */
-#welcome{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:linear-gradient(170deg,#FFF5F1,#FFEDE6,#FFE0D5,#FFF0F3);transition:opacity .5s,transform .5s;overflow:hidden}
+#welcome{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:linear-gradient(175deg,#FEF9F5 0%,#FFF3EC 25%,#FFE8DD 50%,#FFF0F3 75%,#FEF9F5 100%);transition:opacity .5s,transform .5s;overflow:hidden}
 #welcome canvas{position:absolute;inset:0;pointer-events:none;z-index:0}
 #welcome.exit{opacity:0;transform:scale(1.05);pointer-events:none}
-.wc{position:relative;z-index:1;text-align:center;padding:40px 24px;max-width:380px;width:100%}
-.w-icon{font-size:5rem;display:block;margin-bottom:12px;animation:lkb 2s ease-in-out infinite;filter:drop-shadow(0 8px 16px rgba(255,160,122,.3))}
-.w-title{font-size:2rem;font-weight:700;letter-spacing:2px;margin-bottom:4px}
-.w-sub{font-size:1rem;color:#8D6E63;margin-bottom:36px}
-.w-stats{display:flex;align-items:center;background:rgba(255,255,255,.55);backdrop-filter:blur(12px);border-radius:20px;padding:16px 24px;margin-bottom:36px;box-shadow:0 4px 20px rgba(255,160,122,.1);border:1px solid rgba(255,180,150,.2)}
-.w-stat{flex:1;text-align:center}
-.w-stat-num{display:block;font-size:1.5rem;font-weight:700;color:#FF8C69}
-.w-stat-lbl{font-size:.7rem;color:#BCAAA4;letter-spacing:1px}
-.w-div{width:1px;height:32px;background:rgba(0,0,0,.06)}
+.wc{position:relative;z-index:1;text-align:center;padding:32px 28px;max-width:340px;width:100%}
+.w-icon{font-size:4.2rem;display:block;margin-bottom:8px;animation:lkb 2s ease-in-out infinite;filter:drop-shadow(0 8px 20px rgba(255,160,122,.35))}
+.w-title{font-size:2.6rem;font-weight:800;letter-spacing:6px;margin-bottom:2px;background:linear-gradient(135deg,#E8886A 0%,#FFA07A 40%,#FF8C69 70%,#E8886A 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.w-sub{font-size:.95rem;color:#A09085;margin-bottom:28px;letter-spacing:2px;font-weight:400}
+
+/* Age badge */
+.w-age-badge{display:inline-block;background:rgba(255,255,255,.7);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:24px;padding:18px 32px;margin-bottom:24px;box-shadow:0 4px 24px rgba(180,140,120,.08);border:1px solid rgba(255,255,255,.8)}
+.w-age-num{font-size:2.2rem;font-weight:800;color:#FF8C69;letter-spacing:1px;line-height:1.1}
+.w-age-unit{font-size:.8rem;color:#A09085;font-weight:400;letter-spacing:2px;margin-top:2px}
 
 /* Countdown card */
-.w-countdown{background:rgba(255,255,255,.55);backdrop-filter:blur(12px);border-radius:20px;padding:14px 24px;margin-bottom:36px;text-align:center;box-shadow:0 4px 20px rgba(255,160,122,.1);border:1px solid rgba(255,180,150,.2)}
-.w-cd-label{font-size:.95rem;font-weight:600;color:#FF8C69;letter-spacing:1px;margin-bottom:6px}
-.w-cd-row{display:flex;align-items:baseline;justify-content:center;gap:6px}
-.w-cd-num{font-size:2.2rem;font-weight:700;color:#FF8C69;font-variant-numeric:proportional-nums;animation:cdPulse 2s ease-in-out infinite}
-@keyframes cdPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-.w-cd-emoji{font-size:1.3rem}
-.w-cd-unit{font-size:1.05rem;color:#8D6E63;font-weight:500}
+.w-cd-card{background:rgba(255,255,255,.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:20px;padding:16px 22px;margin-bottom:28px;text-align:center;box-shadow:0 4px 24px rgba(180,140,120,.08);border:1px solid rgba(255,255,255,.7)}
+.w-cd-header{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px}
+.w-cd-label-icon{font-size:1.3rem}
+.w-cd-label-text{font-size:.85rem;font-weight:600;color:#8D6E63;letter-spacing:1px}
+.w-cd-days-row{display:flex;align-items:baseline;justify-content:center;gap:8px;margin-bottom:10px}
+.w-cd-num{font-size:2.6rem;font-weight:800;color:#FF8C69;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";line-height:1}
+.w-cd-unit{font-size:.95rem;color:#8D6E63;font-weight:500}
+.w-cd-bar{height:4px;background:rgba(0,0,0,.04);border-radius:2px;overflow:hidden;margin-top:2px}
+.w-cd-fill{height:100%;background:linear-gradient(90deg,#FFA07A,#FFB6C1);border-radius:2px;transition:width .8s ease;width:0%}
 
-.w-enter{display:inline-flex;align-items:center;gap:10px;padding:16px 48px;border-radius:50px;background:linear-gradient(135deg,#FFA07A,#FF8C69);color:#fff;font-size:1.15rem;font-weight:600;letter-spacing:2px;box-shadow:0 8px 28px rgba(255,140,105,.35);transition:transform .2s}
-.w-enter:active{transform:scale(.94)}
-.w-footer{margin-top:32px;font-size:.8rem;color:#BCAAA4;letter-spacing:1px}
+.w-enter{display:inline-flex;align-items:center;gap:10px;padding:18px 56px;border-radius:60px;background:linear-gradient(135deg,#FFA07A,#FF8C69);color:#fff;font-size:1.1rem;font-weight:600;letter-spacing:3px;box-shadow:0 8px 32px rgba(255,140,105,.3);transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden}
+.w-enter::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transition:left .6s}
+.w-enter:hover::after,.w-enter:active::after{left:100%}
+.w-enter:active{transform:scale(.95);box-shadow:0 4px 16px rgba(255,140,105,.25)}
+.w-footer{margin-top:20px;font-size:.72rem;color:#BCAAA4;letter-spacing:1px;line-height:1.6}
 
 /* ===== MAIN APP ===== */
 #main{padding-bottom:56px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0))}
 #main[hidden]{display:none}
 #main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;max-width:768px;margin:0 auto}
-#bar{position:sticky;top:0;z-index:50;background:rgba(255,251,245,.85);backdrop-filter:blur(12px);border-bottom:1px solid #F0E8E0;padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between}
+#bar{position:sticky;top:0;z-index:50;background:rgba(255,251,245,.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(240,232,224,.6);padding:0 16px;height:48px;display:flex;align-items:center;justify-content:space-between}
 .bar-left{display:flex;align-items:center;gap:8px}
-.bar-logo{font-size:1.75rem;animation:lkb 3s ease-in-out infinite}
-.bar-title{font-size:1.125rem;font-weight:600}
-.bar-sub{font-size:.75rem;color:#8D6E63}
+.bar-logo{font-size:1.5rem;animation:lkb 3s ease-in-out infinite}
+.bar-title{font-size:.95rem;font-weight:600;display:flex;align-items:center;gap:6px}
+.bar-age-chip{display:inline-block;font-size:.6rem;font-weight:500;padding:1px 8px;border-radius:10px;background:rgba(255,160,122,.12);color:#FF8C69;letter-spacing:.5px}
+.bar-sub{font-size:.7rem;color:#A09085}
 .btn-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.25rem}
 .btn-icon:active{background:#FFEDE6}
 /* Content */
@@ -555,22 +560,23 @@ input:focus,textarea:focus,select:focus{outline:none}
     <span class="w-icon">🍑</span>
     <h1 class="w-title" id="wname">小桃酥</h1>
     <p class="w-sub">的成长记录</p>
-    <div class="w-stats">
-      <div class="w-stat"><span class="w-stat-num" id="wage">--</span><span class="w-stat-lbl">月龄</span></div>
-      <div class="w-div"></div>
-      <div class="w-stat"><span class="w-stat-num" id="wphotos">--</span><span class="w-stat-lbl">照片</span></div>
-      <div class="w-div"></div>
-      <div class="w-stat"><span class="w-stat-num" id="wms">--</span><span class="w-stat-lbl">里程碑</span></div>
+    <div class="w-age-badge">
+      <div class="w-age-num" id="wage">--</div>
+      <div class="w-age-unit">来到这个世界</div>
     </div>
-    <div id="w-countdown" class="w-countdown">
-      <div class="w-cd-label"><span id="w-cd-emoji"></span> <span id="w-cd-name">百天</span></div>
-      <div class="w-cd-row">
-        <span class="w-cd-num" id="w-cd-days">--</span>
-        <span class="w-cd-unit">天后到来 🎉</span>
+    <div class="w-cd-card" id="w-countdown">
+      <div class="w-cd-header">
+        <span class="w-cd-label-icon" id="w-cd-emoji"></span>
+        <span class="w-cd-label-text" id="w-cd-name">百天</span>
       </div>
+      <div class="w-cd-days-row">
+        <span class="w-cd-num" id="w-cd-days">--</span>
+        <span class="w-cd-unit" id="w-cd-unit-text">天后到来</span>
+      </div>
+      <div class="w-cd-bar"><div class="w-cd-fill" id="w-cd-fill"></div></div>
     </div>
     <button class="w-enter" id="wenter">开始记录 <span>→</span></button>
-    <p class="w-footer">用爱记录每一个珍贵瞬间 💕</p>
+    <p class="w-footer"><span id="w-footer-text">用爱记录每一个珍贵瞬间</span><span id="w-footer-stats" style="display:block"></span></p>
   </div>
 </div>
 
@@ -580,7 +586,7 @@ input:focus,textarea:focus,select:focus{outline:none}
     <div class="bar-left">
       <span class="bar-logo">🍑</span>
       <div>
-        <h1 class="bar-title" id="btitle">小桃酥的成长记录</h1>
+        <h1 class="bar-title"><span id="btitle">小桃酥的成长记录</span><span class="bar-age-chip" id="bar-chip">0天</span></h1>
         <p class="bar-sub" id="bage">--</p>
       </div>
     </div>
@@ -925,8 +931,7 @@ function showWelcome() {
 
   $('#wname').textContent = s.babyName;
   $('#wage').textContent = age.text;
-  $('#wphotos').textContent = appData.photos.length;
-  $('#wms').textContent = msAchieved.size;
+  $('#w-footer-stats').textContent = appData.photos.length+' 张照片 · '+msAchieved.size+' 个里程碑';
 
   // Countdown to next milestone
   const milestones = getUpcomingMilestones(s.birthDate);
@@ -935,8 +940,17 @@ function showWelcome() {
     $('#w-cd-emoji').textContent = next.emoji;
     $('#w-cd-name').textContent = next.label;
     $('#w-cd-days').textContent = next.daysLeft;
+    // Calculate progress percentage
+    var totalDays=next.totalDays||100;
+    var elapsed=Math.max(0,totalDays-next.daysLeft);
+    var pct=Math.min(100,Math.round(elapsed/totalDays*100));
+    $('#w-cd-fill').style.width=pct+'%';
     if (next.daysLeft === 0) {
-      document.querySelector('.w-cd-unit').textContent = '🎊🎊🎊';
+      $('#w-cd-unit-text').textContent = '就是今天！';
+      $('#w-cd-fill').style.width='100%';
+      $('#w-cd-fill').style.background='linear-gradient(90deg,#FFD700,#FFA07A)';
+    } else {
+      $('#w-cd-unit-text').textContent = '天后到来';
     }
   } else {
     $('#w-countdown').style.display = 'none';
@@ -1044,7 +1058,7 @@ function renderPage() {
 }
 
 function updateTitle() { $('#btitle').textContent=(appData.settings.babyName||'宝宝')+'的成长记录'; }
-function updateAge() { const a=U.age(appData.settings.birthDate,U.today());$('#bage').textContent=U.fmtDate(appData.settings.birthDate)+' 出生 · 现在 '+a.text+' 啦'; }
+function updateAge() { const a=U.age(appData.settings.birthDate,U.today());$('#bage').textContent=U.fmtDate(appData.settings.birthDate)+' 出生 · 现在 '+a.text+' 啦';$('#bar-chip').textContent=a.text; }
 
 // Toast
 function toast(msg,type) {
@@ -3028,7 +3042,7 @@ function getUpcomingMilestones(birthDate) {
   // Filter to future milestones, sorted nearest first
   const upcoming = keyDays
     .filter(m => m.days > elapsed)
-    .map(m => ({ ...m, daysLeft: m.days - elapsed }));
+    .map(m => ({ ...m, daysLeft: m.days - elapsed, totalDays: m.days }));
 
   // Also check if today IS a milestone
   const todayMatch = keyDays.find(m => m.days === elapsed);
