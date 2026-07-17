@@ -217,9 +217,21 @@ input:focus,textarea:focus,select:focus{outline:none}
 .stat-tile{background:#fff;border-radius:12px;padding:16px;text-align:center;border:1px solid #F0E8E0}
 .stat-val{font-size:1.5rem;font-weight:600;color:#4E342E}.stat-val .u{font-size:.875rem;font-weight:400;color:#8D6E63;margin-left:2px}
 .stat-lbl{font-size:.75rem;color:#BCAAA4;margin-top:4px}
-.chart-box{background:#fff;border-radius:12px;padding:16px;margin-bottom:24px;border:1px solid #F0E8E0}
-.chart-box h3{font-size:1rem;font-weight:500;margin-bottom:16px;color:#8D6E63}
+.chart-box{background:#fff;border-radius:14px;padding:16px;margin-bottom:20px;border:1px solid #F0E8E0}
+.chart-box h3{font-size:.95rem;font-weight:600;margin-bottom:12px;color:#8D6E63}
 .chart-wrap{position:relative;width:100%;height:280px}
+
+/* Growth cards — cute style */
+.growth-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.gr-card{background:#fff;border-radius:14px;padding:14px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.03);transition:transform .15s}
+.gr-card:active{transform:scale(.96)}
+.gr-card-top{display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:4px}
+.gr-card-icon{font-size:1.2rem}
+.gr-card-label{font-size:.75rem;color:#8D6E63;font-weight:500}
+.gr-card-val{font-size:1.4rem;font-weight:700;color:#4E342E}
+.gr-card-unit{font-size:.75rem;font-weight:400;color:#8D6E63}
+.gr-card-pct{font-size:.75rem;font-weight:600;margin-top:2px}
+.gr-card-delta{font-size:.7rem;color:#81C784;margin-top:2px}
 .tbl{width:100%;border-collapse:collapse;font-size:.875rem}
 .tbl th,.tbl td{text-align:center;padding:8px 4px;border-bottom:1px solid #F0E8E0}
 .tbl th{font-weight:500;color:#BCAAA4;font-size:.75rem}
@@ -1443,191 +1455,221 @@ function showMsForm(existing){
 }
 
 // ============================================================
-//  GROWTH PAGE
+//  GROWTH PAGE  
 // ============================================================
 function renderGrowth(){
-  try{
   var records=appData.growthRecords.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
   var birth=appData.settings.birthDate;
   records.forEach(function(r){r.ageInDays=U.age(birth,r.date).totalDays;});
   var latest=records.length>0?records[records.length-1]:null;
   var prev=records.length>1?records[records.length-2]:null;
 
-  var ageDays=latest?latest.ageInDays:0;
-  var htPct=latest&&latest.height!=null?getPercentile(ageDays,latest.height,'height'):null;
-  var wtPct=latest&&latest.weight!=null?getPercentile(ageDays,latest.weight,'weight'):null;
-  var hcPct=latest&&latest.headCircumference!=null?getPercentile(ageDays,latest.headCircumference,'head'):null;
-
-  var html='';
-  if(latest){
-    html+='<div class="growth-assess"><h3>📊 发育评估</h3>';
-    html+=assessLine(htPct,'📏','身高',latest.height+'cm');
-    html+=assessLine(wtPct,'⚖️','体重',latest.weight+'kg');
-    if(hcPct)html+=assessLine(hcPct,'📐','头围',latest.headCircumference+'cm');
-    html+='<div class="growth-assess-summary">'+getAssessmentSummary(htPct,wtPct,ageDays)+'</div>';
-    html+='<div style="font-size:.65rem;color:#BCAAA4;margin-top:6px;text-align:center">依据：WHO儿童生长标准(2006)+中国卫健委WS/T 423-2022</div></div>';
-  }
-
-  html+='<div class="stat-tiles">';
-  html+=stile('📏','身高',latest?latest.height:'--','cm',prev?deltaS(latest.height,prev.height,'cm'):'',htPct);
-  html+=stile('⚖️','体重',latest?latest.weight:'--','kg',prev?deltaS(latest.weight,prev.weight,'kg'):'',wtPct);
-  html+=stile('📐','头围',latest&&latest.headCircumference?latest.headCircumference:'--','cm','',hcPct);
+  var html='<div class="growth-cards">';
+  var items=[{icon:'📏',label:'身高',v:latest?latest.height:null,u:'cm',color:'#FF8C69'},
+             {icon:'⚖️',label:'体重',v:latest?latest.weight:null,u:'kg',color:'#81C784'},
+             {icon:'📐',label:'头围',v:latest&&latest.headCircumference?latest.headCircumference:null,u:'cm',color:'#FFB6C1'}];
+  items.forEach(function(item){
+    var pct=item.v!=null?getPercentile(records,item.label.toLowerCase(),item.v):null;
+    var ds=prev&&item.v!=null?deltaS(latest,prev,item.label.toLowerCase()):'';
+    html+='<div class="gr-card" style="border-top:4px solid '+item.color+'">';
+    html+='<div class="gr-card-top"><span class="gr-card-icon">'+item.icon+'</span><span class="gr-card-label">'+item.label+'</span></div>';
+    html+='<div class="gr-card-val">'+(item.v!=null?item.v:'--')+'<span class="gr-card-unit">'+(item.v!=null?item.u:'')+'</span></div>';
+    if(pct)html+='<div class="gr-card-pct" style="color:'+getPctColor(pct)+'">'+pct+'</div>';
+    if(ds)html+='<div class="gr-card-delta">'+ds+'</div>';
+    html+='</div>';
+  });
   html+='</div>';
 
+  // Charts
   if(records.length>0){
-    html+='<div class="chart-box"><h3>📏 身高生长曲线</h3><div class="chart-wrap"><canvas id="ch"></canvas></div></div>';
-    html+='<div class="chart-box"><h3>⚖️ 体重生长曲线</h3><div class="chart-wrap"><canvas id="cw"></canvas></div></div>';
+    html+='<div class="chart-box"><h3>📏 身高生长曲线</h3>'+drawSVGChart(records,'height','#FF8C69')+'</div>';
+    html+='<div class="chart-box"><h3>⚖️ 体重生长曲线</h3>'+drawSVGChart(records,'weight','#81C784')+'</div>';
   }
 
-  html+='<div class="chart-box"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="margin:0">📋 记录列表</h3><button class="btn btn-p btn-sm" id="btn-add-gr">+ 添加</button></div>';
+  // AI Assessment
+  if(latest&&latest.height&&latest.weight){
+    var htPctStr=getPercentile(records,'height',latest.height);
+    var wtPctStr=getPercentile(records,'weight',latest.weight);
+    html+=growAssessmentCard(htPctStr,wtPctStr,records.length);
+  }
+
+  // Records table
+  html+='<div class="chart-box"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">📋 记录列表</h3><button class="btn btn-p btn-sm" id="btn-add-gr">+ 添加记录</button></div>';
   if(records.length===0){html+=emptyState('📊','还没有发育记录','添加身高体重数据来生成生长曲线吧~');}
   else{
-    html+='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>日期</th><th>月龄</th><th>身高(cm)</th><th>体重(kg)</th><th>头围(cm)</th><th></th></tr></thead><tbody>';
+    html+='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>日期</th><th>月龄</th><th>身高</th><th>体重</th><th>头围</th><th></th></tr></thead><tbody>';
     records.slice().reverse().forEach(function(r){
       var age=U.age(birth,r.date);
-      html+='<tr><td>'+U.fmtShort(r.date)+'</td><td>'+age.text+'</td><td>'+(r.height!=null?r.height:'-')+'</td><td>'+(r.weight!=null?r.weight:'-')+'</td><td>'+(r.headCircumference!=null?r.headCircumference:'-')+'</td><td><button class="btn btn-s btn-sm btn-del-gr" data-id="'+r.id+'">删除</button></td></tr>';
+      html+='<tr><td>'+U.fmtShort(r.date)+'</td><td>'+age.text+'</td><td>'+(r.height!=null?r.height+'cm':'-')+'</td><td>'+(r.weight!=null?r.weight+'kg':'-')+'</td><td>'+(r.headCircumference!=null?r.headCircumference+'cm':'-')+'</td><td><button class="btn btn-s btn-sm btn-del-gr" data-id="'+r.id+'">×</button></td></tr>';
     });
     html+='</tbody></table></div>';
   }
   html+='</div>';
 
   $('#page-growth').innerHTML=html;
-
   $('#btn-add-gr')?.addEventListener('click',showGrForm);
   $$('.btn-del-gr').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();confirm('确定删除？',async function(){await API.deleteGrowth(b.dataset.id);toast('已删除','ok');reloadData().then(function(){renderPage();});});});});
-
-  if(records.length>0){setTimeout(function(){renderCharts(records,birth);},200);}
-  }catch(e){console.error('renderGrowth error:',e);$('#page-growth').innerHTML=emptyState('📊','加载失败','请刷新重试');}
 }
 
-function stile(icon,label,value,unit,ds,pct){var pctHtml='';if(pct&&value!=='--'){var color=pct>=15&&pct<=85?'#81C784':pct<3||pct>97?'#EF9A9A':'#FFD54F';pctHtml='<div style="font-size:.7rem;color:'+color+';margin-top:2px;font-weight:500">P'+pct+'</div>';}return'<div class="stat-tile"><div style="font-size:1.5rem;margin-bottom:4px">'+icon+'</div><div class="stat-val">'+(value!=='--'?value:'--')+'<span class="u">'+(value!=='--'?unit:'')+'</span></div><div class="stat-lbl">'+label+'</div>'+pctHtml+(ds?'<div class="stat-lbl" style="color:#81C784">'+ds+'</div>':'')+'</div>';}
-function deltaS(c,p,u){if(c==null||p==null)return'';const d=c-p;return(d>=0?'+':'')+d.toFixed(1)+u+' 较上次';}
+// ---- SVG Chart Renderer (zero dependencies) ----
+function drawSVGChart(records,metric,color){
+  var data=[];records.forEach(function(r){
+    var v=metric==='height'?r.height:r.weight;
+    if(v!=null)data.push({x:r.ageInDays,y:v});
+  });
+  if(data.length<1)return'<p style="text-align:center;color:#BCAAA4">暂无数据</p>';
 
-function drawCharts(records,birth){
-  function drawChart(canvasId, data, refP50, refP97, refP3, label, color, yMax){
-    var canvas=document.getElementById(canvasId);if(!canvas)return;
-    var ctx=canvas.getContext('2d');if(!ctx)return;
-    var W=canvas.offsetWidth||300,H=280;
-    canvas.width=W;canvas.height=H;
-    var pad={top:20,right:16,bottom:38,left:48};
-    var pw=W-pad.left-pad.right,ph=H-pad.top-pad.bottom;
-    var xMin=0,xMax=Math.max(730,data.length>0?data[data.length-1].x+30:730);
-    var yUseMax=Math.max(yMax,data.length>0?Math.max.apply(null,data.map(function(d){return d.y;}))+5:yMax);
-    var yMin=yUseMax<20?1:refP3.length>0&&refP3[0].y?refP3[0].y*0.85:Math.max(30,yUseMax-50);
+  var maxAge=Math.max(730,data[data.length-1].x+30);
+  var yMax=Math.max(metric==='height'?80:15,data.reduce(function(m,d){return Math.max(m,d.y);},0)+5);
+  var yMin=metric==='height'?40:1;
+  var W=600,H=280,pl=50,pr=20,pt=20,pb=40,pw=W-pl-pr,ph=H-pt-pb;
 
-    function toX(x){return pad.left+(x-xMin)/xMax*pw;}
-    function toY(y){return pad.top+ph-(y-yMin)/(yUseMax-yMin)*ph;}
-
-    ctx.fillStyle='#FFFBF5';ctx.fillRect(0,0,W,H);
-
-    // Grid lines
-    ctx.strokeStyle='#EDE7E0';ctx.lineWidth=0.5;
-    for(var i=0;i<=5;i++){var gy=pad.top+ph*i/5;ctx.beginPath();ctx.moveTo(pad.left,gy);ctx.lineTo(pad.left+pw,gy);ctx.stroke();}
-    for(var i=0;i<=Math.min(xMax/30,24);i++){var dx=i*30;if(dx<=xMax){var gx=toX(dx);ctx.beginPath();ctx.moveTo(gx,pad.top);ctx.lineTo(gx,pad.top+ph);ctx.stroke();}}
-
-    // P3-P97 band
-    if(refP3&&refP97&&refP3.length>1){
-      ctx.fillStyle='rgba(215,204,200,0.15)';
-      ctx.beginPath();
-      for(var i=0;i<Math.min(refP3.length,refP97.length);i++)ctx.lineTo(toX(refP3[i].x),toY(refP3[i].y));
-      for(var i=Math.min(refP3.length,refP97.length)-1;i>=0;i--)ctx.lineTo(toX(refP97[i].x),toY(refP97[i].y));
-      ctx.closePath();ctx.fill();
-    }
-
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;font-family:sans-serif" xmlns="http://www.w3.org/2000/svg">';
+  svg+='<rect width="'+W+'" height="'+H+'" fill="#FFFBF5" rx="8"/>';
+  
+  // WHO reference bands
+  var pts=getWHOPoints(metric);
+  if(pts){
+    // P3-P97 fill
+    var fillPath='M'+toSVGX(pts.p3[0][0],0,maxAge,pl,pw)+' '+toSVGY(pts.p3[0][1],yMin,yMax,pt,ph);
+    for(var i=1;i<pts.p3.length;i++)fillPath+=' L'+toSVGX(pts.p3[i][0],0,maxAge,pl,pw)+' '+toSVGY(pts.p3[i][1],yMin,yMax,pt,ph);
+    for(var i=pts.p97.length-1;i>=0;i--)fillPath+=' L'+toSVGX(pts.p97[i][0],0,maxAge,pl,pw)+' '+toSVGY(pts.p97[i][1],yMin,yMax,pt,ph);
+    svg+='<path d="'+fillPath+' Z" fill="rgba(215,204,200,0.12)"/>';
     // Ref lines
-    ctx.save();ctx.strokeStyle='rgba(215,204,200,0.5)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
-    [refP97,refP3].forEach(function(ref){
-      if(ref&&ref.length>1){ctx.beginPath();ctx.moveTo(toX(ref[0].x),toY(ref[0].y));for(var i=1;i<ref.length;i++)ctx.lineTo(toX(ref[i].x),toY(ref[i].y));ctx.stroke();}
-    });
-    ctx.restore();
-
-    if(refP50&&refP50.length>1){
-      ctx.save();ctx.strokeStyle='#D7CCC8';ctx.lineWidth=1.5;ctx.setLineDash([6,3]);
-      ctx.beginPath();ctx.moveTo(toX(refP50[0].x),toY(refP50[0].y));
-      for(var i=1;i<refP50.length;i++)ctx.lineTo(toX(refP50[i].x),toY(refP50[i].y));
-      ctx.stroke();ctx.restore();
-    }
-
-    // Data line
-    if(data.length>0){
-      ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.setLineDash([]);
-      ctx.beginPath();ctx.moveTo(toX(data[0].x),toY(data[0].y));
-      for(var i=1;i<data.length;i++)ctx.lineTo(toX(data[i].x),toY(data[i].y));
-      ctx.stroke();ctx.restore();
-
-      // Data dots
-      data.forEach(function(d){
-        ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(toX(d.x),toY(d.y),5,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle=color;ctx.beginPath();ctx.arc(toX(d.x),toY(d.y),3.5,0,Math.PI*2);ctx.fill();
-      });
-    }
-
-    // Axes
-    ctx.strokeStyle='#BCAAA4';ctx.lineWidth=1;ctx.setLineDash([]);
-    ctx.beginPath();ctx.moveTo(pad.left,pad.top);ctx.lineTo(pad.left,pad.top+ph);ctx.lineTo(pad.left+pw,pad.top+ph);ctx.stroke();
-
-    // Y ticks
-    ctx.fillStyle='#BCAAA4';ctx.font='10px sans-serif';ctx.textAlign='right';
-    for(var i=0;i<=5;i++){var val=(yMin+(yUseMax-yMin)*i/5).toFixed(1);ctx.fillText(val,pad.left-6,pad.top+ph*(1-i/5)+4);}
-
-    // X ticks
-    ctx.textAlign='center';
-    for(var i=0;i<=Math.min(xMax/30,24);i++){var dx=i*30;if(dx<=xMax)ctx.fillText(dx+'d',toX(dx),pad.top+ph+14);}
-
-    // Chart title
-    ctx.fillStyle='#8D6E63';ctx.font='11px sans-serif';ctx.textAlign='center';
-    ctx.fillText(label,pad.left+pw/2,pad.top+ph+30);
-
-    // Legend
-    ctx.fillStyle=color;ctx.fillRect(pad.left+8,pad.top+4,10,10);
-    ctx.fillStyle='#8D6E63';ctx.font='10px sans-serif';ctx.textAlign='left';
-    ctx.fillText('小桃酥',pad.left+22,pad.top+12);
-    ctx.strokeStyle='#D7CCC8';ctx.setLineDash([4,4]);ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(pad.left+70,pad.top+9);ctx.lineTo(pad.left+100,pad.top+9);ctx.stroke();
-    ctx.setLineDash([]);ctx.fillText('P50',pad.left+104,pad.top+12);
+    svg+=drawSVGLine(pts.p97,'rgba(215,204,200,0.5)',1.5,'4,4',0,maxAge,yMin,yMax,pl,pt,pw,ph);
+    svg+=drawSVGLine(pts.p50,'#D7CCC8',1.5,'6,3',0,maxAge,yMin,yMax,pl,pt,pw,ph);
+    svg+=drawSVGLine(pts.p3,'rgba(215,204,200,0.5)',1.5,'4,4',0,maxAge,yMin,yMax,pl,pt,pw,ph);
   }
-
-  var hData=[],wData=[];
-  records.forEach(function(r){
-    if(r.height!=null)hData.push({x:r.ageInDays,y:r.height});
-    if(r.weight!=null)wData.push({x:r.ageInDays,y:r.weight});
+  
+  // Data line
+  var dPath='M'+toSVGX(data[0].x,0,maxAge,pl,pw)+' '+toSVGY(data[0].y,yMin,yMax,pt,ph);
+  for(var i=1;i<data.length;i++)dPath+=' L'+toSVGX(data[i].x,0,maxAge,pl,pw)+' '+toSVGY(data[i].y,yMin,yMax,pt,ph);
+  svg+='<path d="'+dPath+'" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+  
+  // Data dots
+  data.forEach(function(d){
+    svg+='<circle cx="'+toSVGX(d.x,0,maxAge,pl,pw)+'" cy="'+toSVGY(d.y,yMin,yMax,pt,ph)+'" r="4.5" fill="#fff" stroke="'+color+'" stroke-width="2"/>';
   });
-
-  var htP50=[],htP97=[],htP3=[],wtP50=[],wtP97=[],wtP3=[];
-  var maxAge=Math.max(730,hData.length>0?hData[hData.length-1].x:0);
-  WHO_GIRLS.forEach(function(row){
-    var days=Math.round(row[0]*30.4375);if(days>maxAge+120)return;
-    htP3.push({x:days,y:row[1]});htP50.push({x:days,y:row[3]});htP97.push({x:days,y:row[5]});
-    wtP3.push({x:days,y:row[6]});wtP50.push({x:days,y:row[8]});wtP97.push({x:days,y:row[10]});
-  });
-
-  // Deferred draw to ensure canvas is in DOM
-  setTimeout(function(){drawChart('ch',hData,htP50,htP97,htP3,'身高生长曲线','#FF8C69',105);},300);
-  setTimeout(function(){drawChart('cw',wData,wtP50,wtP97,wtP3,'体重生长曲线','#81C784',20);},300);
+  
+  // Grid + axes
+  for(var i=0;i<=5;i++){
+    var gy=pt+(ph*i/5);
+    svg+='<line x1="'+pl+'" y1="'+gy+'" x2="'+(pl+pw)+'" y2="'+gy+'" stroke="#EDE7E0" stroke-width="0.5"/>';
+    var val=(yMin+(yMax-yMin)*i/5).toFixed(1);
+    svg+='<text x="'+(pl-4)+'" y="'+(gy+4)+'" text-anchor="end" font-size="10" fill="#BCAAA4">'+val+'</text>';
+  }
+  // X ticks
+  var step=Math.ceil(maxAge/10/30)*30;
+  for(var dx=0;dx<=maxAge;dx+=step){
+    var gx=toSVGX(dx,0,maxAge,pl,pw);
+    svg+='<line x1="'+gx+'" y1="'+(pt+ph)+'" x2="'+gx+'" y2="'+(pt+ph+4)+'" stroke="#BCAAA4" stroke-width="0.5"/>';
+    svg+='<text x="'+gx+'" y="'+(pt+ph+16)+'" text-anchor="middle" font-size="9" fill="#BCAAA4">'+dx+'天</text>';
+  }
+  
+  svg+='<line x1="'+pl+'" y1="'+pt+'" x2="'+pl+'" y2="'+(pt+ph)+'" stroke="#BCAAA4" stroke-width="1"/>';
+  svg+='<line x1="'+pl+'" y1="'+(pt+ph)+'" x2="'+(pl+pw)+'" y2="'+(pt+ph)+'" stroke="#BCAAA4" stroke-width="1"/>';
+  
+  // Legend
+  svg+='<rect x="'+(pl+6)+'" y="'+(pt+2)+'" width="10" height="10" rx="2" fill="'+color+'"/>';
+  svg+='<text x="'+(pl+20)+'" y="'+(pt+10)+'" font-size="10" fill="#8D6E63">小桃酥</text>';
+  svg+='<line x1="'+(pl+70)+'" y1="'+(pt+7)+'" x2="'+(pl+100)+'" y2="'+(pt+7)+'" stroke="#D7CCC8" stroke-width="1.5" stroke-dasharray="4,3"/>';
+  svg+='<text x="'+(pl+104)+'" y="'+(pt+10)+'" font-size="10" fill="#BCAAA4">P50</text>';
+  
+  svg+='</svg>';
+  return'<div style="text-align:center">'+svg+'</div>';
+}
+function toSVGX(x,xMin,xMax,pl,pw){return(pl+(x-xMin)/(xMax-xMin)*pw).toFixed(1);}
+function toSVGY(y,yMin,yMax,pt,ph){return(pt+ph-(y-yMin)/(yMax-yMin)*ph).toFixed(1);}
+function drawSVGLine(pts,color,width,dashArr,xMin,xMax,yMin,yMax,pl,pt,pw,ph){
+  if(!pts||pts.length<2)return'';
+  var p='M'+toSVGX(pts[0][0],xMin,xMax,pl,pw)+' '+toSVGY(pts[0][1],yMin,yMax,pt,ph);
+  for(var i=1;i<pts.length;i++)p+=' L'+toSVGX(pts[i][0],xMin,xMax,pl,pw)+' '+toSVGY(pts[i][1],yMin,yMax,pt,ph);
+  return'<path d="'+p+'" fill="none" stroke="'+color+'" stroke-width="'+width+'" stroke-dasharray="'+dashArr+'"/>';
 }
 
-// Keep old function name
-var renderCharts=drawCharts;
+function getWHOPoints(metric){
+  var p3=[],p50=[],p97=[];
+  WHO_GIRLS.forEach(function(row){
+    var days=Math.round(row[0]*30.4375);
+    if(metric==='height'){p3.push([days,row[1]]);p50.push([days,row[3]]);p97.push([days,row[5]]);}
+    else{p3.push([days,row[6]]);p50.push([days,row[8]]);p97.push([days,row[10]]);}
+  });
+  return{p3:p3,p50:p50,p97:p97};
+}
 
+function getPercentile(records,metric,value){
+  if(value==null)return null;
+  var prev=[],next=[],p50AtVal=0;
+  var age=records[records.length-1]?records[records.length-1].ageInDays:0;
+  var mon=Math.round(age/30.4375);
+  if(mon>=24)mon=23;
+  
+  var row=WHO_GIRLS[mon];
+  if(!row)return null;
+  
+  var p3,p50,p97;
+  if(metric==='height'){p3=row[1];p50=row[3];p97=row[5];}
+  else if(metric==='weight'){p3=row[6];p50=row[8];p97=row[10];}
+  else return null;
+  
+  if(value<p3)return'低于P3';
+  if(value<=p3+(p50-p3)*0.4)return'P3~P15';
+  if(value<=p3+(p50-p3)*0.8)return'P15~P50';
+  if(value<=p50+(p97-p50)*0.3)return'P50附近';
+  if(value<=p50+(p97-p50)*0.7)return'P50~P85';
+  if(value<=p97)return'P85~P97';
+  return'高于P97';
+}
+
+function getPctColor(pct){
+  if(!pct)return'#BCAAA4';
+  if(pct.indexOf('P15~P50')>=0||pct.indexOf('P50附近')>=0||pct.indexOf('P50~P85')>=0)return'#81C784';
+  if(pct.indexOf('低于')>=0||pct.indexOf('高于')>=0)return'#EF9A9A';
+  return'#FFD54F';
+}
+
+function deltaS(latest,prev,metric){
+  if(!latest||!prev)return'';
+  var cur=m=metric==='height'?latest.height:latest.weight;
+  var pr=m=metric==='height'?prev.height:prev.weight;
+  if(cur==null||pr==null)return'';
+  var d=cur-pr,u=metric==='height'?'cm':'kg';
+  return(d>=0?'+':'')+d.toFixed(1)+u+' 较上次';
+}
+
+function growAssessmentCard(htPct,wtPct,count){
+  if(count<1)return'';
+  var lines=[];
+  var htOK=htPct&&(htPct.indexOf('P15')>=0||htPct.indexOf('P50')>=0);
+  var wtOK=wtPct&&(wtPct.indexOf('P15')>=0||wtPct.indexOf('P50')>=0);
+  if(htOK&&wtOK)lines.push('✅ 身高体重均在正常范围，生长状态良好');
+  else if(!htOK&&wtOK)lines.push('⚠️ 身高需关注，体重正常');
+  else if(htOK&&!wtOK)lines.push('⚠️ 体重需关注，身高正常');
+  else lines.push('⚠️ 生长指标均需关注，建议咨询儿科医生');
+  lines.push('📋 已记录'+count+'条测量，继续定期监测');
+  
+  var html='<div style="background:linear-gradient(135deg,#FFFBF5,#F8FFF5);border-radius:14px;padding:14px;margin-bottom:20px;border:1px solid rgba(129,199,132,.15)">';
+  html+='<div style="font-weight:600;color:#66BB6A;margin-bottom:6px;font-size:.95rem">📊 智能评估</div>';
+  lines.forEach(function(l){html+='<div style="font-size:.85rem;color:#4E342E;line-height:1.6">'+l+'</div>';});
+  html+='<div style="font-size:.65rem;color:#BCAAA4;margin-top:6px">依据：WHO标准(2006)+中国卫健委WS/T 423-2022</div></div>';
+  return html;
+}
 
 function showGrForm(){
-  const today=U.today(),birth=appData.settings.birthDate;
-  const html='<div class="fg"><label class="fl">日期 *</label><input type="date" class="fi" id="gr-date" value="'+today+'" min="'+birth+'" max="'+today+'"></div>'+
+  var today=U.today(),birth=appData.settings.birthDate;
+  var html='<div class="fg"><label class="fl">日期 *</label><input type="date" class="fi" id="gr-date" value="'+today+'" min="'+birth+'" max="'+today+'"></div>'+
     '<div class="fr"><div class="fg"><label class="fl">身高 (cm)</label><input type="number" class="fi" id="gr-height" placeholder="50" step="0.1" min="30" max="130"></div><div class="fg"><label class="fl">体重 (kg)</label><input type="number" class="fi" id="gr-weight" placeholder="3.3" step="0.1" min="1" max="30"></div></div>'+
     '<div class="fg"><label class="fl">头围 (cm)</label><input type="number" class="fi" id="gr-head" placeholder="34" step="0.1" min="25" max="55"></div>'+
     '<div class="fg"><label class="fl">备注</label><textarea class="ft" id="gr-notes" rows="2" placeholder="记录一些备注..."></textarea></div>';
-  showModal('添加发育记录',html,async()=>{
-    const date=$('#gr-date').value,height=parseFloat($('#gr-height').value)||null,weight=parseFloat($('#gr-weight').value)||null,head=parseFloat($('#gr-head').value)||null,notes=$('#gr-notes').value.trim();
+  showModal('添加发育记录',html,async function(){
+    var date=$('#gr-date').value,height=parseFloat($('#gr-height').value)||null,weight=parseFloat($('#gr-weight').value)||null,head=parseFloat($('#gr-head').value)||null,notes=$('#gr-notes').value.trim();
     if(!date){toast('请选择日期','err');return false;}
-    try{
-      await API.addGrowth({id:U.genId('g'),date,ageInDays:U.age(birth,date).totalDays,height,weight,headCircumference:head,notes});
-      toast('记录已添加','ok');celebrate();return true;
-    }catch(e){toast('保存失败: '+e.message,'err');return false;}
+    try{await API.addGrowth({id:U.genId('g'),date:date,ageInDays:U.age(birth,date).totalDays,height:height,weight:weight,headCircumference:head,notes:notes});toast('记录已添加','ok');celebrate();return true;}
+    catch(e){toast('保存失败: '+e.message,'err');return false;}
   });
 }
 
-// ============================================================
-//  DIARY PAGE
+//  DIARY PAGE//  DIARY PAGE
 // ============================================================
 let diaryDetail=null;
 
@@ -2446,9 +2488,7 @@ function getUpcomingMilestones(birthDate) {
 function emptyState(icon,title,desc){return'<div class="empty"><div class="empty-icon">'+icon+'</div><div class="empty-title">'+title+'</div><div class="empty-desc">'+desc+'</div></div>';}
 
 // ---- Chart.js loaded from local file (no CDN dependency) ----
-var _chartJSLoaded=typeof Chart!=='undefined';
 
-// Skip old renderCharts wrapper — use simple inline chart draw
 
 </script>
 </body>
