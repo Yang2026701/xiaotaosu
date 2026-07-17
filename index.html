@@ -209,6 +209,33 @@ input:focus,textarea:focus,select:focus{outline:none}
 .ms-meta{font-size:.75rem;color:#BCAAA4;margin-bottom:8px}
 .ms-notes{font-size:.875rem;color:#8D6E63;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
+/* Milestone guessing */
+.mg-section{margin-top:28px;padding-top:20px;border-top:2px dashed #F0E8E0}
+.mg-section-title{font-size:.95rem;font-weight:600;color:#5D4037;margin-bottom:16px}
+.mg-upcoming-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#FFFBF5;border-radius:12px;margin-bottom:8px;border:1px solid #F5EDE5}
+.mg-up-emoji{font-size:1.5rem;flex-shrink:0}
+.mg-up-info{flex:1;min-width:0}
+.mg-up-title{font-size:.85rem;font-weight:500;color:#4E342E}
+.mg-up-meta{font-size:.7rem;color:#BCAAA4}
+.mg-guess-btn{padding:6px 14px;border-radius:16px;background:linear-gradient(135deg,#FFA07A,#FF8C69);color:#fff;font-size:.7rem;font-weight:500;cursor:pointer;white-space:nowrap;transition:transform .15s;flex-shrink:0}
+.mg-guess-btn:active{transform:scale(.93)}
+.mg-guess-count{font-size:.65rem;color:#FFA07A;margin-top:2px;text-align:center}
+
+/* Guess results for achieved */
+.mg-result-card{background:linear-gradient(135deg,#FFFBF5,#FFF8F0);border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid #F5EDE5}
+.mg-result-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.mg-result-emoji{font-size:1.3rem}
+.mg-result-title{font-size:.85rem;font-weight:600;color:#4E342E}
+.mg-result-date{font-size:.7rem;color:#8D6E63;margin-left:auto}
+.mg-leader-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;margin-bottom:4px;font-size:.8rem}
+.mg-leader-item.winner{background:rgba(255,215,0,.15);font-weight:600}
+.mg-leader-rank{font-size:1.1rem;width:24px;text-align:center;flex-shrink:0}
+.mg-leader-name{flex:1;color:#4E342E}
+.mg-leader-diff{font-size:.7rem;color:#8D6E63}
+.mg-leader-diff.exact{color:#66BB6A;font-weight:600}
+.mg-no-guesses{font-size:.75rem;color:#BCAAA4;padding:8px 0}
+.mg-share-hint{font-size:.75rem;color:#BCAAA4;text-align:center;padding:12px;margin-top:8px}
+
 /* Growth */
 .stat-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:24px}
 .stat-tile{background:#fff;border-radius:12px;padding:16px;text-align:center;border:1px solid #F0E8E0}
@@ -708,7 +735,11 @@ const API = {
   saveParentingCheck(stageKey,itemKey,completed) { if(completed) return this._fetch('POST','/rest/v1/parenting_checks',{id:stageKey+'_'+itemKey,stage_key:stageKey,item_key:itemKey,completed:true,completed_at:new Date().toISOString()}); else return this._fetch('DELETE','/rest/v1/parenting_checks?id=eq.'+encodeURIComponent(stageKey+'_'+itemKey)); },
   getDailyLogs() { return this._fetch('GET','/rest/v1/daily_logs?select=*&order=log_date.desc,log_time.desc').then(d=>(d||[]).map(r=>({id:r.id,logType:r.log_type,date:r.log_date,time:r.log_time||'',valueNum:r.value_num,valueText:r.value_text||'',notes:r.notes||''}))); },
   addDailyLog(l) { return this._fetch('POST','/rest/v1/daily_logs',{id:l.id,log_type:l.logType,log_date:l.date,log_time:l.time,value_num:l.valueNum,value_text:l.valueText,notes:l.notes}); },
-  deleteDailyLog(id) { return this._fetch('DELETE','/rest/v1/daily_logs?id=eq.'+encodeURIComponent(id)); }
+  deleteDailyLog(id) { return this._fetch('DELETE','/rest/v1/daily_logs?id=eq.'+encodeURIComponent(id)); },
+  // Milestone guesses
+  getGuesses() { return this._fetch('GET','/rest/v1/milestone_guesses?select=*'); },
+  addGuess(g) { return this._fetch('POST','/rest/v1/milestone_guesses',{id:g.id,milestone_key:g.key,guesser_name:g.name,guessed_date:g.date}); },
+  deleteGuess(id) { return this._fetch('DELETE','/rest/v1/milestone_guesses?id=eq.'+encodeURIComponent(id)); }
 };
 
 // ---- Models ----
@@ -754,7 +785,7 @@ const WHO_GIRLS = [[0, 45.4,47.3,49.1,50.9,52.9, 2.4,2.8,3.2,3.6,4.2, 31.5,33.9,
 // ============================================================
 //  App State
 // ============================================================
-let appData = { settings: { babyName: CFG.DEFAULT_NAME, birthDate: CFG.DEFAULT_BIRTH, birthHeight: 50, birthWeight: 3.3, passcode: CFG.DEFAULT_PASSCODE }, photos: [], milestones: [], growthRecords: [], diaryEntries: [], healthRecords: [], parentingChecks: [], dailyLogs: [] };
+let appData = { settings: { babyName: CFG.DEFAULT_NAME, birthDate: CFG.DEFAULT_BIRTH, birthHeight: 50, birthWeight: 3.3, passcode: CFG.DEFAULT_PASSCODE }, photos: [], milestones: [], growthRecords: [], diaryEntries: [], healthRecords: [], parentingChecks: [], dailyLogs: [], milestoneGuesses: [] };
 let activeTab = 'album';
 let isFirstRun = true;
 let heightChart = null, weightChart = null;
@@ -863,16 +894,17 @@ async function enterApp(config) {
 
     // Load data
     try {
-      const [photos, milestones, growth, diary, health, parenting, dailyLogs] = await Promise.all([
-        API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[]), API.getParenting().catch(()=>[]), API.getDailyLogs().catch(()=>[])
+      const [photos, milestones, growth, diary, health, parenting, dailyLogs, milestoneGuesses] = await Promise.all([
+        API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[]), API.getParenting().catch(()=>[]), API.getDailyLogs().catch(()=>[]), API.getGuesses().catch(()=>[])
       ]);
       appData.photos = photos;
       appData.milestones = milestones;
       appData.growthRecords = growth;
       appData.diaryEntries = diary;
-      appData.healthRecords = health || [];
-      appData.parentingChecks = parenting || [];
-      appData.dailyLogs = dailyLogs || [];
+      appData.healthRecords = health||[];
+      appData.parentingChecks = parenting||[];
+      appData.dailyLogs = dailyLogs||[];
+      appData.milestoneGuesses = milestoneGuesses||[];
       isFirstRun = growth.length === 0;
     } catch (e) {
       console.error('Load error:', e);
@@ -973,11 +1005,11 @@ function setupMainApp() {
 
 async function reloadData() {
   try {
-    const [photos, milestones, growth, diary, health, parenting, dailyLogs] = await Promise.all([
-      API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[]), API.getParenting().catch(()=>[]), API.getDailyLogs().catch(()=>[])
+    const [photos, milestones, growth, diary, health, parenting, dailyLogs, milestoneGuesses] = await Promise.all([
+      API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[]), API.getParenting().catch(()=>[]), API.getDailyLogs().catch(()=>[]), API.getGuesses().catch(()=>[])
    ]);
     appData.photos = photos; appData.milestones = milestones;
-    appData.growthRecords = growth; appData.diaryEntries = diary; appData.healthRecords = health||[]; appData.parentingChecks = parenting||[]; appData.dailyLogs = dailyLogs||[];
+    appData.growthRecords = growth; appData.diaryEntries = diary; appData.healthRecords = health||[]; appData.parentingChecks = parenting||[]; appData.dailyLogs = dailyLogs||[]; appData.milestoneGuesses = milestoneGuesses||[];
   } catch (e) { console.error('Reload error:', e); }
 }
 
@@ -1378,6 +1410,9 @@ function renderMilestones(){
     upcoming.forEach(t=>{html+='<div class="ms-card up"><div class="ms-emoji">'+t.emoji+'</div><div class="ms-info"><h3>'+t.title+'</h3><div class="ms-meta">预计 '+(t.typicalAgeDays<60?t.typicalAgeDays+'天左右':'~'+Math.round(t.typicalAgeDays/30)+'个月')+'</div></div></div>';});
   }
 
+  // Guessing section
+  html+=renderGuesses();
+
   $('#page-milestones').innerHTML=html;
 
   $$('#msfilters .chip').forEach(ch=>{ch.addEventListener('click',()=>{msCat=ch.dataset.cat;renderMilestones();});});
@@ -1427,7 +1462,145 @@ function showMsForm(existing){
 }
 
 // ============================================================
-//  GROWTH PAGE  
+//  MILESTONE GUESSING (家人竞猜)
+// ============================================================
+function showGuessForm(msKey,msTitle,msEmoji){
+  var today=U.today();
+  var ms=lookupMs(msKey);
+  var typicalDate='';
+  if(ms&&ms.typicalAgeDays){
+    var b=new Date(appData.settings.birthDate+'T00:00:00');
+    b.setDate(b.getDate()+ms.typicalAgeDays);
+    typicalDate=b.getFullYear()+'-'+('0'+(b.getMonth()+1)).slice(-2)+'-'+('0'+b.getDate()).slice(-2);
+  }
+  var html='<div class="fg" style="text-align:center;font-size:2rem;margin-bottom:8px">'+msEmoji+'</div>';
+  html+='<div class="fg" style="text-align:center;font-size:1rem;font-weight:600;margin-bottom:16px;color:#4E342E">'+U.esc(msTitle)+'</div>';
+  html+='<div class="fg"><label class="fl">你的称呼</label><input type="text" class="fi" id="mg-name" placeholder="如：奶奶、外婆、姑姑..." maxlength="20"></div>';
+  html+='<div class="fg"><label class="fl">猜猜哪天达成？</label><input type="date" class="fi" id="mg-date" value="'+(typicalDate||today)+'" min="'+appData.settings.birthDate+'"></div>';
+  if(typicalDate)html+='<div style="font-size:.7rem;color:#BCAAA4;margin-top:-8px;margin-bottom:8px">💡 平均参考：'+U.fmtDate(typicalDate)+' 左右</div>';
+  showModal('🔮 猜一猜',html,async function(){
+    var name=document.getElementById('mg-name').value.trim();
+    var date=document.getElementById('mg-date').value;
+    if(!name){toast('请输入你的称呼','err');return false;}
+    if(!date){toast('请选择日期','err');return false;}
+    // Check duplicate
+    var guesses=appData.milestoneGuesses||[];
+    for(var i=0;i<guesses.length;i++){
+      if(guesses[i].milestone_key===msKey&&guesses[i].guesser_name===name){
+        toast('你已经猜过啦~','err');return false;
+      }
+    }
+    try{
+      await API.addGuess({id:U.genId('g'),key:msKey,name:name,date:date});
+      toast('竞猜成功！等宝宝达成时揭晓~','ok');celebrate();return true;
+    }catch(e){toast('保存失败: '+e.message,'err');return false;}
+  });
+}
+
+function renderGuessResults(ms){
+  var guesses=appData.milestoneGuesses||[];
+  var msGuesses=[];
+  for(var i=0;i<guesses.length;i++){
+    if(guesses[i].milestone_key===ms.type)msGuesses.push(guesses[i]);
+  }
+  if(msGuesses.length===0){
+    return '<div class="mg-no-guesses">还没有家人竞猜这个里程碑</div>';
+  }
+  // Sort by date difference
+  var msDate=new Date(ms.date+'T00:00:00');
+  msGuesses.sort(function(a,b){
+    var da=Math.abs(new Date(a.guessed_date+'T00:00:00')-msDate);
+    var db=Math.abs(new Date(b.guessed_date+'T00:00:00')-msDate);
+    return da-db;
+  });
+  var h='';
+  for(var i=0;i<msGuesses.length;i++){
+    var g=msGuesses[i];
+    var gd=new Date(g.guessed_date+'T00:00:00');
+    var diffDays=Math.round((gd-msDate)/86400000);
+    var diffText='';
+    if(diffDays===0)diffText='<span class="mg-leader-diff exact">🎯 完全猜对！</span>';
+    else if(diffDays>0)diffText='<span class="mg-leader-diff">早了 '+diffDays+' 天</span>';
+    else diffText='<span class="mg-leader-diff">晚了 '+Math.abs(diffDays)+' 天</span>';
+    var rank='';
+    if(i===0)rank='🥇';
+    else if(i===1)rank='🥈';
+    else if(i===2)rank='🥉';
+    else rank=(i+1);
+    var isWin=i===0?' winner':'';
+    h+='<div class="mg-leader-item'+isWin+'"><span class="mg-leader-rank">'+rank+'</span><span class="mg-leader-name">'+U.esc(g.guesser_name)+'</span>'+diffText+'</div>';
+  }
+  return '<div class="mg-result-card"><div class="mg-result-header"><span class="mg-result-emoji">'+ms.emoji+'</span><span class="mg-result-title">'+U.esc(ms.title)+'</span><span class="mg-result-date">达成 '+U.fmtShort(ms.date)+'</span></div>'+h+'</div>';
+}
+
+function renderGuesses(){
+  var allTypes=getAllMsTypes();
+  var milestones=appData.milestones||[];
+  var guesses=appData.milestoneGuesses||[];
+  var achievedKeys=new Set();
+  for(var i=0;i<milestones.length;i++){
+    if(milestones[i].type!=='custom')achievedKeys.add(milestones[i].type);
+  }
+
+  // Build guess count map for upcoming
+  var guessCount={};
+  for(var i=0;i<guesses.length;i++){
+    var k=guesses[i].milestone_key;
+    guessCount[k]=(guessCount[k]||0)+1;
+  }
+
+  var html='';
+  // Filter by current category
+  var upcoming=[],achieved=[];
+
+  for(var i=0;i<allTypes.length;i++){
+    var t=allTypes[i];
+    if(msCat!=='all'&&t.category!==msCat)continue;
+    if(achievedKeys.has(t.key)){
+      // Find the actual milestone record
+      var ms=null;
+      for(var j=0;j<milestones.length;j++){if(milestones[j].type===t.key){ms=milestones[j];break;}}
+      if(ms)achieved.push(ms);
+    } else {
+      upcoming.push(t);
+    }
+  }
+
+  // Show achieved with guess results
+  if(achieved.length>0){
+    html+='<div class="mg-section"><div class="mg-section-title">🏆 竞猜揭晓</div>';
+    for(var i=0;i<achieved.length;i++){
+      html+=renderGuessResults(achieved[i]);
+    }
+    html+='</div>';
+  }
+
+  // Show upcoming with guess buttons
+  if(upcoming.length>0){
+    html+='<div class="mg-section"><div class="mg-section-title">🔮 猜一猜</div>';
+    for(var i=0;i<upcoming.length;i++){
+      var t=upcoming[i];
+      var cnt=guessCount[t.key]||0;
+      var ageHint='';
+      if(t.typicalAgeDays<60)ageHint='约 '+t.typicalAgeDays+' 天';
+      else ageHint='约 '+Math.round(t.typicalAgeDays/30)+' 个月';
+      html+='<div class="mg-upcoming-item"><span class="mg-up-emoji">'+t.emoji+'</span><div class="mg-up-info"><div class="mg-up-title">'+t.title+'</div><div class="mg-up-meta">预计 '+ageHint+'</div></div><div style="text-align:center;flex-shrink:0"><button class="mg-guess-btn" onclick="showGuessForm(\''+t.key+'\',\''+U.esc(t.title)+'\',\''+t.emoji+'\')">🔮 猜一猜</button>'+(cnt>0?'<div class="mg-guess-count">'+cnt+'人已猜</div>':'')+'</div></div>';
+    }
+    if(upcoming.length===0||Object.keys(guessCount).length===0){
+      html+='<div class="mg-share-hint">💬 把链接分享给家人，一起来猜宝宝的下一个里程碑吧~</div>';
+    }
+    html+='</div>';
+  }
+
+  if(upcoming.length===0&&achieved.length===0){
+    html+='<div class="mg-share-hint">💬 还没有里程碑数据，先记录一些再邀请家人来猜吧~</div>';
+  }
+
+  return html;
+}
+
+// ============================================================
+//  GROWTH PAGE
 // ============================================================
 function renderGrowth(){
   var records=appData.growthRecords.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
