@@ -851,7 +851,7 @@ lockInput.addEventListener('keydown', (e) => {
 // ============================================================
 async function enterApp(config) {
   appData.settings.babyName = config.baby_name || CFG.DEFAULT_NAME;
-  appData.settings.birthDate = config.birth_date || CFG.DEFAULT_BIRTH; appData.settings.dsApiKey = localStorage.getItem('xts_ds_key')||'';
+  appData.settings.birthDate = config.birth_date || CFG.DEFAULT_BIRTH; appData.settings.dsApiKey = localStorage.getItem('xts_ds_key') || config.ds_api_key || '';
   appData.settings.birthHeight = config.birth_height || 50;
   appData.settings.birthWeight = config.birth_weight || 3.3;
   appData.settings.passcode = config.passcode;
