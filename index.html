@@ -414,6 +414,23 @@ input:focus,textarea:focus,select:focus{outline:none}
 .card,.ms-card,.dc{box-shadow:none;border:1px solid #ddd}
 }
 
+/* ===== WEEKLY BANNER (顶部横幅卡片) ===== */
+.wb-card{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#FFFBF5,#FFF0EB,#FFF5F0);border-radius:14px;padding:12px 14px;margin-bottom:14px;border:1px solid rgba(255,160,122,.2);cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.wb-card:active{transform:scale(.98);box-shadow:0 4px 12px rgba(255,160,122,.15)}
+.wb-card::after{content:'';position:absolute;top:-20px;right:-20px;width:60px;height:60px;border-radius:50%;background:rgba(255,160,122,.08)}
+.wb-icon{font-size:2rem;flex-shrink:0;position:relative;z-index:1}
+.wb-info{flex:1;min-width:0;position:relative;z-index:1}
+.wb-title{font-size:.85rem;font-weight:600;color:#5D4037;margin-bottom:2px}
+.wb-week{font-size:.7rem;color:#BCAAA4;margin-bottom:4px}
+.wb-stats{display:flex;gap:8px;flex-wrap:wrap}
+.wb-stat{font-size:.65rem;color:#8D6E63;background:rgba(255,255,255,.7);padding:2px 8px;border-radius:8px;white-space:nowrap}
+.wb-arrow{font-size:1.2rem;color:#FFA07A;flex-shrink:0;position:relative;z-index:1}
+.wb-empty{font-size:.7rem;color:#BCAAA4}
+
+/* Weekly report back button */
+.wr-back{display:inline-flex;align-items:center;gap:4px;padding:8px 14px;background:#fff;border:1px solid #F0E8E0;border-radius:20px;color:#8D6E63;font-size:.8rem;cursor:pointer;margin-bottom:12px;transition:all .15s}
+.wr-back:active{background:#FFEDE6}
+
 /* ===== WEEKLY REPORT (手账杂志风) ===== */
 .wr-wrap{padding-bottom:80px}
 .wr-header{display:flex;align-items:center;justify-content:center;gap:16px;padding:8px 0 20px}
@@ -559,7 +576,7 @@ input:focus,textarea:focus,select:focus{outline:none}
     <button class="tab" data-tab="growth"><span class="ti">📊</span>发育</button>
     <button class="tab" data-tab="diary"><span class="ti">📝</span>日记</button>
     <button class="tab" data-tab="parenting"><span class="ti">📚</span>育儿</button>
-    <button class="tab" data-tab="daily"><span class="ti">📋</span>日常</button><button class="tab" data-tab="weekly"><span class="ti">📰</span>周报</button><button class="tab" data-tab="health"><span class="ti">🩺</span>健康</button>
+    <button class="tab" data-tab="daily"><span class="ti">📋</span>日常</button><button class="tab" data-tab="health"><span class="ti">🩺</span>健康</button>
   </nav>
 
   <button id="fab" class="hidden">+</button>
@@ -973,6 +990,10 @@ function navigate(tab) {
   if(activeTab!==tab&&activeTab==='growth'){if(heightChart)heightChart.destroy();if(weightChart)weightChart.destroy();}
   activeTab=tab;
   renderPage();
+  // Inject weekly banner on non-special pages
+  if(tab!=='weekly'&&tab!=='settings'){
+    if(pg){var banner=renderWeeklyBanner();pg.innerHTML=banner+pg.innerHTML;}
+  }
   $('#content').scrollTop=0;
 }
 
@@ -1864,6 +1885,52 @@ window._dodl=function(id){confirm('删除？',async function(){await API.deleteD
 // ============================================================
 var weeklyWeekStart=null;
 
+function renderWeeklyBanner(){
+  try{
+  var today=U.today();
+  if(!weeklyWeekStart){
+    var now=new Date(today+'T00:00:00');
+    var day=now.getDay();
+    var monOffset=day===0?-6:1-day;
+    var mon=new Date(now);mon.setDate(now.getDate()+monOffset);
+    weeklyWeekStart=mon.getFullYear()+'-'+('0'+(mon.getMonth()+1)).slice(-2)+'-'+('0'+mon.getDate()).slice(-2);
+  }
+  var week=getWeekRange(weeklyWeekStart);
+  var dLogs=appData.dailyLogs||[];
+  var feeds=0,formulaMl=0,breastMin=0,sleeps=0,diapers=0,newMs=0,photos=0,diaries=0;
+  for(var i=0;i<dLogs.length;i++){
+    var l=dLogs[i];
+    if(!isDateInRange(l.date,week))continue;
+    if(l.logType==='feed'){feeds++;if(l.valueText&&l.valueText.indexOf('母乳')===0){breastMin+=(l.valueNum||0);}else{formulaMl+=(l.valueNum||0);}}
+    else if(l.logType==='sleep')sleeps++;
+    else if(l.logType==='diaper')diapers++;
+  }
+  for(var i=0;i<appData.milestones.length;i++){if(isDateInRange(appData.milestones[i].date,week))newMs++;}
+  for(var i=0;i<appData.photos.length;i++){if(isDateInRange(appData.photos[i].date,week))photos++;}
+  for(var i=0;i<appData.diaryEntries.length;i++){if(isDateInRange(appData.diaryEntries[i].date,week))diaries++;}
+
+  var stats=[];
+  if(feeds>0)stats.push('<span class="wb-stat">🍼 '+feeds+'次</span>');
+  if(sleeps>0)stats.push('<span class="wb-stat">😴 '+sleeps+'次</span>');
+  if(diapers>0)stats.push('<span class="wb-stat">💩 '+diapers+'次</span>');
+  if(newMs>0)stats.push('<span class="wb-stat">🏆 +'+newMs+'</span>');
+  if(photos>0)stats.push('<span class="wb-stat">📷 '+photos+'张</span>');
+  if(diaries>0)stats.push('<span class="wb-stat">📝 '+diaries+'篇</span>');
+
+  var hasData=stats.length>0;
+
+  return '<div class="wb-card" id="wb-banner" onclick="location.hash=\'weekly\'">'+
+    '<div class="wb-icon">📰</div>'+
+    '<div class="wb-info">'+
+    '<div class="wb-title">成长周报</div>'+
+    '<div class="wb-week">'+week.label+'</div>'+
+    (hasData?'<div class="wb-stats">'+stats.join('')+'</div>':'<div class="wb-empty">本周还没有记录，去添加吧~</div>')+
+    '</div>'+
+    '<div class="wb-arrow">→</div>'+
+    '</div>';
+  }catch(e){return'';}
+}
+
 function getWeekRange(dateStr){
   var d=new Date(dateStr+'T00:00:00');
   var day=d.getDay();
@@ -1937,6 +2004,9 @@ function renderWeekly(){
   var hasData=weekGrowth.length>0||weekMilestones.length>0||weekDiary.length>0||weekPhotos.length>0||weekLogs.length>0;
 
   var h='<div class="wr-wrap">';
+
+  // Back button
+  h+='<button class="wr-back" onclick="history.back()">← 返回</button>';
 
   // === HEADER ===
   h+='<div class="wr-header">';
