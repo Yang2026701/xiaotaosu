@@ -592,6 +592,10 @@ input:focus,textarea:focus,select:focus{outline:none}
 .edu-item-lang{font-size:.6rem;padding:1px 6px;border-radius:6px;flex-shrink:0}
 .edu-item-lang.cn{background:rgba(255,160,122,.1);color:#FF8C69}
 .edu-item-lang.en{background:rgba(129,199,132,.12);color:#4CAF50}
+.edu-speak-btn{width:36px;height:36px;border-radius:50%;background:rgba(129,199,132,.12);color:#4CAF50;font-size:1.1rem;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s}
+.edu-speak-btn:active{background:rgba(129,199,132,.25);transform:scale(.92)}
+.edu-speak-mini{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(129,199,132,.1);color:#4CAF50;font-size:.7rem;cursor:pointer;flex-shrink:0;margin-left:6px;transition:all .15s}
+.edu-speak-mini:active{background:rgba(129,199,132,.2)}
 .edu-detail-lyrics{white-space:pre-line;font-size:.85rem;line-height:1.7;color:#5D4037;margin-top:8px;padding:12px;background:#FFFBF5;border-radius:10px}
 .edu-detail-tip{font-size:.78rem;color:#FF8C69;margin-top:10px;padding:8px 12px;background:rgba(255,160,122,.08);border-radius:8px}
 </style>
@@ -3281,7 +3285,8 @@ function renderEarlyEdu(){
     html += '<div class="edu-sec-body'+(sec.open?' open':'')+'" id="edu-body-'+i+'">';
     for (var j = 0; j < sec.items.length; j++) {
       var item = sec.items[j];
-      html += '<div class="edu-item" onclick="showEduDetail(\''+stage.stageKey+'\','+i+','+j+')"><span class="edu-item-emoji">'+(item.sub.charAt(0)||'📝')+'</span><div class="edu-item-info"><div class="edu-item-title">'+U.esc(item.title)+'</div><div class="edu-item-sub">'+U.esc(item.sub)+'</div></div>'+(item.lang?'<span class="edu-item-lang '+(item.lang==='en'?'en':'cn')+'">'+(item.lang==='en'?'EN':'中')+'</span>':'')+'</div>';
+      var isEn=(item.lang==='en'||sec.type==='en-song'||sec.type==='en-word');
+      html += '<div class="edu-item" onclick="showEduDetail(\''+stage.stageKey+'\','+i+','+j+')"><span class="edu-item-emoji">'+(item.sub.charAt(0)||'📝')+'</span><div class="edu-item-info"><div class="edu-item-title">'+U.esc(item.title)+'</div><div class="edu-item-sub">'+U.esc(item.sub)+'</div></div>'+(item.lang?'<span class="edu-item-lang '+(item.lang==='en'?'en':'cn')+'">'+(item.lang==='en'?'EN':'中')+'</span>':'')+(isEn?'<span class="edu-speak-mini" data-speak="'+U.esc(item.title).replace(/"/g,'&quot;')+'">🔊</span>':'')+'</div>';
     }
     html += '</div></div>';
   }
@@ -3311,9 +3316,34 @@ function renderEarlyEdu(){
         }
       });
     });
+    // Speak mini-buttons on English items
+    var speakBtns = document.querySelectorAll('#page-earlyedu .edu-speak-mini');
+    speakBtns.forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var title = this.dataset.speak;
+        if (title) speakEnglish(title, this);
+      });
+    });
   }, 100);
 
   } catch(e) { $('#page-earlyedu').innerHTML = '<div class="empty"><div class="empty-icon">🎓</div><div class="empty-title">出错了</div><div class="empty-desc">'+e.message+'</div></div>'; }
+}
+
+// Speech synthesis for English content
+var _speechSynth = window.speechSynthesis;
+var _speaking = false;
+function speakEnglish(text, btnEl) {
+  if (_speaking) { _speechSynth.cancel(); _speaking = false; if (btnEl) btnEl.textContent = '🔊'; return; }
+  _speechSynth.cancel();
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = 0.75;
+  u.pitch = 1.1;
+  u.onstart = function() { _speaking = true; if (btnEl) { btnEl.textContent = '⏹'; btnEl.style.background = 'rgba(255,140,105,.2)'; } };
+  u.onend = function() { _speaking = false; if (btnEl) { btnEl.textContent = '🔊'; btnEl.style.background = ''; } };
+  u.onerror = function() { _speaking = false; if (btnEl) { btnEl.textContent = '🔊'; btnEl.style.background = ''; } };
+  _speechSynth.speak(u);
 }
 
 function showEduDetail(stageKey, secIdx, itemIdx){
@@ -3322,8 +3352,14 @@ function showEduDetail(stageKey, secIdx, itemIdx){
   var item = stage.sections[secIdx].items[itemIdx];
   if (!item) return;
 
-  var html = '<div style="font-size:1.2rem;font-weight:600;margin-bottom:4px;color:#4E342E">'+U.esc(item.title)+'</div>';
-  html += '<div style="font-size:.8rem;color:#BCAAA4;margin-bottom:12px">'+U.esc(item.sub)+' · '+stage.ageLabel+'</div>';
+  var isEnglish = item.lang === 'en' || stage.sections[secIdx].type === 'en-song' || stage.sections[secIdx].type === 'en-word';
+  var html = '<div style="display:flex;align-items:flex-start;gap:8px">';
+  html += '<div style="flex:1"><div style="font-size:1.2rem;font-weight:600;margin-bottom:4px;color:#4E342E">'+U.esc(item.title)+'</div>';
+  html += '<div style="font-size:.8rem;color:#BCAAA4;margin-bottom:12px">'+U.esc(item.sub)+' · '+stage.ageLabel+'</div></div>';
+  if (isEnglish) {
+    html += '<button class="edu-speak-btn" id="edu-speak-btn" title="点击朗读">🔊</button>';
+  }
+  html += '</div>';
   if (item.detail) {
     html += '<div class="edu-detail-lyrics">'+U.esc(item.detail)+'</div>';
   }
@@ -3331,7 +3367,15 @@ function showEduDetail(stageKey, secIdx, itemIdx){
     html += '<div class="edu-detail-tip">💡 '+U.esc(item.tip)+'</div>';
   }
 
-  showModal(item.title, html, null);
+  showModal(item.title, html, null, function(){
+    if (isEnglish) {
+      var btn = document.getElementById('edu-speak-btn');
+      if (btn) {
+        var textToRead = item.sub + '. ' + (item.detail || '').replace(/\\n/g, '. ').replace(/[\(（].*?[\)）]/g, '');
+        btn.addEventListener('click', function() { speakEnglish(textToRead, btn); });
+      }
+    }
+  });
 }
 // ============================================================
 function renderHealthFiles(r){
