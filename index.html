@@ -562,6 +562,38 @@ input:focus,textarea:focus,select:focus{outline:none}
 .sm-hint{text-align:center;color:rgba(255,255,255,.8);font-size:.85rem;padding:12px 0 4px}
 .sm-download{display:block;margin:8px auto 0;padding:10px 28px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;font-size:.8rem;cursor:pointer;transition:background .15s}
 .sm-download:active{background:rgba(255,255,255,.25)}
+
+/* ===== EARLY EDUCATION ===== */
+.edu-stage-header{text-align:center;padding:16px 0 12px}
+.edu-stage-title{font-size:1.1rem;font-weight:700;color:#5D4037;margin-bottom:4px}
+.edu-stage-desc{font-size:.8rem;color:#BCAAA4}
+.edu-stages{display:flex;gap:6px;overflow-x:auto;padding:4px 0 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.edu-stages::-webkit-scrollbar{display:none}
+.edu-stg-chip{flex-shrink:0;padding:5px 14px;border-radius:16px;font-size:.72rem;font-weight:500;background:#fff;border:1px solid #F0E8E0;color:#8D6E63;cursor:pointer;transition:all .15s}
+.edu-stg-chip.active{background:#FFA07A;color:#fff;border-color:#FFA07A}
+.edu-stg-chip.future{opacity:.6;border-style:dashed}
+.edu-section{margin-bottom:8px;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #F5EDE5}
+.edu-sec-header{display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:pointer;transition:background .15s}
+.edu-sec-header:active{background:#FFFBF5}
+.edu-sec-icon{font-size:1.3rem;flex-shrink:0}
+.edu-sec-title{flex:1;font-size:.85rem;font-weight:600;color:#4E342E}
+.edu-sec-count{font-size:.65rem;color:#BCAAA4;background:#F5EDE5;padding:2px 8px;border-radius:10px}
+.edu-sec-arrow{color:#BCAAA4;font-size:.8rem;transition:transform .2s}
+.edu-sec-arrow.open{transform:rotate(180deg)}
+.edu-sec-body{display:none;border-top:1px solid #F5EDE5;padding:8px 14px 12px}
+.edu-sec-body.open{display:block}
+.edu-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #F9F6F3;cursor:pointer;transition:background .15s}
+.edu-item:last-child{border-bottom:none}
+.edu-item:active{background:#FFFBF5;margin:0 -14px;padding-left:14px;padding-right:14px;border-radius:8px}
+.edu-item-emoji{font-size:1.1rem;flex-shrink:0}
+.edu-item-info{flex:1;min-width:0}
+.edu-item-title{font-size:.85rem;font-weight:500;color:#4E342E}
+.edu-item-sub{font-size:.7rem;color:#BCAAA4;margin-top:1px}
+.edu-item-lang{font-size:.6rem;padding:1px 6px;border-radius:6px;flex-shrink:0}
+.edu-item-lang.cn{background:rgba(255,160,122,.1);color:#FF8C69}
+.edu-item-lang.en{background:rgba(129,199,132,.12);color:#4CAF50}
+.edu-detail-lyrics{white-space:pre-line;font-size:.85rem;line-height:1.7;color:#5D4037;margin-top:8px;padding:12px;background:#FFFBF5;border-radius:10px}
+.edu-detail-tip{font-size:.78rem;color:#FF8C69;margin-top:10px;padding:8px 12px;background:rgba(255,160,122,.08);border-radius:8px}
 </style>
 </head>
 <body>
@@ -630,7 +662,7 @@ input:focus,textarea:focus,select:focus{outline:none}
     <section id="page-growth" class="page" hidden></section>
     <section id="page-diary" class="page" hidden></section>
     <section id="page-parenting" class="page" hidden></section>
-    <section id="page-daily" class="page" hidden></section><section id="page-weekly" class="page" hidden></section><section id="page-health" class="page" hidden></section>
+    <section id="page-daily" class="page" hidden></section><section id="page-weekly" class="page" hidden></section><section id="page-health" class="page" hidden></section><section id="page-earlyedu" class="page" hidden></section>
     <section id="page-settings" class="page" hidden></section>
   </main>
 
@@ -640,7 +672,7 @@ input:focus,textarea:focus,select:focus{outline:none}
     <button class="tab" data-tab="growth"><span class="ti">📊</span>发育</button>
     <button class="tab" data-tab="diary"><span class="ti">📝</span>日记</button>
     <button class="tab" data-tab="parenting"><span class="ti">📚</span>育儿</button>
-    <button class="tab" data-tab="daily"><span class="ti">📋</span>日常</button><button class="tab" data-tab="health"><span class="ti">🩺</span>健康</button>
+    <button class="tab" data-tab="daily"><span class="ti">📋</span>日常</button><button class="tab" data-tab="health"><span class="ti">🩺</span>健康</button><button class="tab" data-tab="earlyedu"><span class="ti">🎓</span>早教</button>
   </nav>
 
   <button id="fab" class="hidden">+</button>
@@ -1038,6 +1070,7 @@ var ROUTES = [
   {key:'daily',     render:renderDaily,      fab:null, hideFab:true},
   {key:'weekly',    render:renderWeekly,     fab:null, hideFab:true},
   {key:'health',    render:renderHealth,     fab:null},
+  {key:'earlyedu',  render:renderEarlyEdu,  fab:null},
   {key:'settings',  render:renderSettings,   fab:null, hideFab:true}
 ];
 function byRoute(key){return ROUTES.find(function(r){return r.key===key;});}
@@ -1101,7 +1134,7 @@ function navigate(tab) {
   activeTab=tab;
   renderPage();
   // Hide weekly strip on weekly/settings pages
-  $('#bweekly-strip').style.display=(tab==='weekly'||tab==='settings')?'none':'flex';
+  $('#bweekly-strip').style.display=(tab==='weekly'||tab==='settings'||tab==='earlyedu')?'none':'flex';
   $('#content').scrollTop=0;
 }
 
@@ -2786,6 +2819,520 @@ async function showShareCard(){
 
 
 //  HEALTH PAGE
+// ============================================================
+//  EARLY EDUCATION DATA (中英双语早教素材)
+// ============================================================
+var EARLY_EDU = [
+  // ---------- 0-1 月 ----------
+  { stageKey:'0-1m', ageLabel:'0-1个月', ageDays:[0,30], desc:'视觉刺激 + 听觉启蒙 + 亲密连接',
+    sections:[
+      { icon:'🎵', title:'中文儿歌', type:'cn-song', open:true,
+        items:[
+          { title:'摇篮曲', lang:'cn', sub:'经典哄睡', detail:'睡吧，睡吧，我亲爱的宝贝\n妈妈的双手轻轻摇着你\n摇篮摇你快快安睡\n夜已安静，被里多温暖', tip:'轻声哼唱即可，妈妈的声音是最好的白噪音' },
+          { title:'小星星', lang:'cn', sub:'一闪一闪亮晶晶', detail:'一闪一闪亮晶晶\n满天都是小星星\n挂在天上放光明\n好像许多小眼睛', tip:'抱着宝宝轻轻摇晃，配合手指在天空画圈' },
+          { title:'小燕子', lang:'cn', sub:'穿花衣', detail:'小燕子，穿花衣\n年年春天来这里\n我问燕子你为啥来\n燕子说，这里的春天最美丽', tip:'吐字清晰，拉长尾音，宝宝会被妈妈的声音吸引' }
+        ]
+      },
+      { icon:'🎵', title:'英文儿歌', type:'en-song', open:true,
+        items:[
+          { title:'Twinkle Twinkle Little Star', lang:'en', sub:'经典英文摇篮曲', detail:'Twinkle, twinkle, little star\nHow I wonder what you are\nUp above the world so high\nLike a diamond in the sky\nTwinkle, twinkle, little star\nHow I wonder what you are', tip:'中文大意：一闪一闪小星星，我多想知道你是什么。挂在世界上方那么高，像天空中的钻石。不需要唱完整首，反复前两句就够了' },
+          { title:'Rock-a-bye Baby', lang:'en', sub:'温柔摇篮曲', detail:'Rock-a-bye baby, on the treetop\nWhen the wind blows, the cradle will rock\nWhen the bough breaks, the cradle will fall\nAnd down will come baby, cradle and all', tip:'抱着宝宝轻轻摇晃，节奏缓慢。中文大意：摇啊摇宝宝在树梢，风吹摇篮摇。' },
+          { title:"Brahms' Lullaby", lang:'en', sub:'勃拉姆斯摇篮曲', detail:'Lullaby, and good night\nWith pink roses bedight\nWith lilies o\'erspread\nIs my sweet baby\'s head\nLay down now and rest\nMay your slumber be blessed', tip:'这是全世界最有名的摇篮曲旋律。哼"嗯~嗯~嗯~"的旋律即可' },
+          { title:'Hush, Little Baby', lang:'en', sub:'安静小宝宝', detail:"Hush, little baby, don't say a word\nMama's gonna buy you a mockingbird\nAnd if that mockingbird won't sing\nMama's gonna buy you a diamond ring", tip:'每句结尾押韵，语调轻柔。中文大意：安静小宝宝别说话，妈妈给你买一只知更鸟。' }
+        ]
+      },
+      { icon:'👀', title:'黑白视觉卡', type:'visual',
+        items:[
+          { title:'同心圆图案', lang:'cn', sub:'黑白对比', detail:'直径约15cm的黑白同心圆，圆环宽度约2cm，黑白交替。', tip:'距离宝宝眼睛20-30cm，缓慢从一侧移到另一侧，观察宝宝是否追视' },
+          { title:'棋盘格', lang:'cn', sub:'2x2或4x4方格', detail:'黑白交替的棋盘格图案，每个格子约5cm见方。', tip:'贴在婴儿床侧面，距离30cm。每天换一个方向' },
+          { title:'简单笑脸', lang:'cn', sub:'两条弧线+两个点', detail:'黑色粗线条画一个圆圈，里面两个黑点做眼睛，一条弧线做嘴巴。', tip:'宝宝对人脸有天生的偏好，笑脸图案能引起注意' },
+          { title:'粗条纹', lang:'cn', sub:'竖条纹/横条纹', detail:'宽约3cm的黑白条纹，可以是竖纹或横纹。', tip:'先竖条纹后横条纹，变换角度观察宝宝反应' }
+        ]
+      },
+      { icon:'📖', title:'中文绘本', type:'cn-book',
+        items:[
+          { title:'《黑白卡》系列', lang:'cn', sub:'新生儿视觉激发', detail:'市面上各种黑白卡套装，含动物、形状、几何图案等。新生儿视觉神经未发育完全，只能分辨黑白和强对比。', tip:'每天2-3次，每次不超过5分钟，避免过度刺激' },
+          { title:'《脸，脸，各种各样的脸》', lang:'cn', sub:'柳原良平', detail:'展示不同表情的脸——开心的脸、伤心的脸、生气的脸。帮助宝宝认知面部表情。', tip:'妈妈可以对着宝宝模仿书中的表情' }
+        ]
+      },
+      { icon:'📖', title:'英文绘本', type:'en-book',
+        items:[
+          { title:'Black & White (Tana Hoban)', lang:'en', sub:'新生儿视觉启蒙经典', detail:'全黑白图案的折叠书，可以展开立在宝宝旁边。Tana Hoban是视觉启蒙绘本的先驱。', tip:'本书无需文字，纯粹用黑白图案刺激视觉发育' },
+          { title:'Look, Look! (Peter Linenthal)', lang:'en', sub:'高对比度黑白书', detail:'黑白+少量红色的图案书，包含太阳、小鱼、汽车等简单图形，每页配简单单词。', tip:'边翻页边念出单词即可' }
+        ]
+      },
+      { icon:'🤲', title:'亲子互动', type:'play',
+        items:[
+          { title:'袋鼠式护理 (Kangaroo Care)', lang:'cn', sub:'肌肤接触', detail:'让宝宝只穿尿布，趴在妈妈/爸爸裸露的胸前，盖上毯子。每次15-30分钟，每天1-2次。', tip:'世界卫生组织推荐！能稳定心率、提高体温、促进母乳分泌、增强安全感。爸爸也可以做！' },
+          { title:'轻柔抚触', lang:'cn', sub:'从头到脚', detail:'喂奶后1小时，室温26°C以上。从额头→脸颊→胸部→腹部→手臂→手掌→腿部→脚掌，每处轻轻抚触3-5次。', tip:'手掌要温暖，可以用少量婴儿按摩油。抚触前洗手，摘下戒指等硬物' },
+          { title:'做鬼脸游戏', lang:'cn', sub:'吐舌头、张大嘴', detail:'抱着宝宝面对面约20cm距离，慢慢做出夸张的表情——吐舌头、张大嘴、鼓腮帮。', tip:'新生儿会本能地模仿成人的表情。这是最早的社交互动' }
+        ]
+      },
+      { icon:'🗣️', title:'中文启蒙', type:'cn-word',
+        items:[
+          { title:'模仿发音', lang:'cn', sub:'a, o, e', detail:'对着宝宝张大嘴巴发出"啊——""哦——""鹅——"的长音，让宝宝看到口型。', tip:'嘴形尽量夸张，拉长音，等几秒给宝宝反应时间' },
+          { title:'多和宝宝说话', lang:'cn', sub:'做什么说什么', detail:'换尿布时说"妈妈给宝宝换尿布啦"，喂奶时说"宝宝饿了吗，要喝奶啦"。', tip:'语速放慢，音调提高，这是全世界妈妈都本能会用的"妈妈语"' }
+        ]
+      },
+      { icon:'🗣️', title:'英文启蒙', type:'en-word',
+        items:[
+          { title:'Hello / Bye-bye', lang:'en', sub:'最简单的社交词汇', detail:'每天起床时说"Hello baby~"，睡前说"Goodnight baby~"，建立语感。', tip:'语气温暖即可，不需要说完整的句子。关键是让孩子习惯英语的语调' },
+          { title:'I love you', lang:'en', sub:'爱的表达', detail:'看着宝宝的眼睛，用夸张的嘴型说"I love you"。每天重复，让宝宝把这句话和温暖的拥抱联系起来。', tip:'这是宝宝的第一句英文，虽然他还听不懂，但语调就是最好的"语言种子"' }
+        ]
+      }
+    ]
+  },
+  // ---------- 1-3 月 ----------
+  { stageKey:'1-3m', ageLabel:'1-3个月', ageDays:[31,90], desc:'彩色追视 + 听觉发展 + 笑容回应',
+    sections:[
+      { icon:'🎵', title:'中文儿歌', type:'cn-song', open:true,
+        items:[
+          { title:'两只老虎', lang:'cn', sub:'经典童谣', detail:'两只老虎，两只老虎\n跑得快，跑得快\n一只没有耳朵\n一只没有尾巴\n真奇怪，真奇怪', tip:'可以配合手指做动作：两只手指竖起来做老虎耳朵' },
+          { title:'找朋友', lang:'cn', sub:'互动拍手', detail:'找呀找呀找朋友\n找到一个好朋友\n敬个礼呀握握手\n你是我的好朋友\n再见！', tip:'握着宝宝的手做拍手、敬礼、握手的动作' },
+          { title:'小兔子乖乖', lang:'cn', sub:'安全启蒙', detail:'小兔子乖乖，把门儿开开\n快点儿开开，我要进来\n不开不开我不开\n妈妈没回来，谁来也不开', tip:'妈妈扮演大灰狼压低声音，再恢复正常声音唱，宝宝会注意到区别' }
+        ]
+      },
+      { icon:'🎵', title:'英文儿歌', type:'en-song', open:true,
+        items:[
+          { title:'You Are My Sunshine', lang:'en', sub:'温暖爱之歌', detail:"You are my sunshine, my only sunshine\nYou make me happy when skies are gray\nYou'll never know, dear, how much I love you\nPlease don't take my sunshine away", tip:'极其经典的亲子歌曲。中文大意：你是我的阳光我唯一的阳光，阴天你也让我快乐' },
+          { title:'Skidamarink', lang:'en', sub:'爱的手势歌', detail:'Skidamarink a dink a dink\nSkidamarink a doo\nI love you\nI love you in the morning\nAnd in the afternoon\nI love you in the evening\nAnd underneath the moon', tip:'唱到 I love you 时看着宝宝的眼睛，配合手指比心' },
+          { title:'The Itsy Bitsy Spider', lang:'en', sub:'小蜘蛛手指游戏', detail:'The itsy bitsy spider climbed up the water spout\nDown came the rain and washed the spider out\nOut came the sun and dried up all the rain\nAnd the itsy bitsy spider climbed up the spout again', tip:'用手指模仿蜘蛛爬行！中文大意：小蜘蛛爬上水管下雨了被冲下来太阳出来了晒干雨水小蜘蛛又爬上去了。配合手指爬行、下雨手势' },
+          { title:'Row Row Row Your Boat', lang:'en', sub:'划船歌', detail:'Row, row, row your boat\nGently down the stream\nMerrily, merrily, merrily, merrily\nLife is but a dream', tip:'抱着宝宝面对面坐着，拉着他的手前后摇摆做划船动作' }
+        ]
+      },
+      { icon:'👀', title:'彩色视觉卡', type:'visual',
+        items:[
+          { title:'红色球追视', lang:'cn', sub:'直径8-10cm红球', detail:'拿一个红色的小球，距离宝宝30cm，从左到右、从上到下缓慢移动。', tip:'2个月大的宝宝开始能分辨红色，这是最早能识别的彩色' },
+          { title:'高对比度色卡', lang:'cn', sub:'红黄蓝图案', detail:'用红、黄、蓝等鲜艳颜色画简单图形（圆形、三角形），贴在婴儿床旁边。', tip:'选择饱和度高的颜色，宝宝更容易注意到' },
+          { title:'人脸照片', lang:'cn', sub:'家人的照片', detail:'打印爸爸妈妈的照片，贴在宝宝能看到的地方。黑白或彩色都可以。', tip:'宝宝特别关注人脸的轮廓和眼睛。距离30-40cm最佳' }
+        ]
+      },
+      { icon:'📖', title:'中文绘本', type:'cn-book',
+        items:[
+          { title:'《抱抱》', lang:'cn', sub:'杰兹·阿波罗', detail:'一本几乎只有"抱抱"两个字的绘本。小猩猩找妈妈，一路看到各种动物在抱抱，最后找到妈妈给了大大的拥抱。', tip:'每次说到"抱抱"就紧紧抱一下宝宝，建立词语和动作的联系' }
+        ]
+      },
+      { icon:'📖', title:'英文绘本', type:'en-book',
+        items:[
+          { title:'Brown Bear, Brown Bear (Eric Carle)', lang:'en', sub:'颜色+动物启蒙', detail:'Brown bear, brown bear, what do you see? I see a red bird looking at me. 全书用一问一答重复句式介绍颜色和动物。', tip:'语速放慢，翻到每种动物时指出颜色。中文大意：棕熊棕熊你看见了什么？我看见一只红色的鸟在看我' }
+        ]
+      },
+      { icon:'🤲', title:'亲子互动', type:'play',
+        items:[
+          { title:'拍手歌 (Pat-a-cake)', lang:'cn', sub:'中英双语游戏', detail:'握宝宝的手，边拍边唱："拍手拍手拍拍手，我们一起拍拍手。Pat-a-cake, pat-a-cake, baker\'s man~"', tip:'节奏感是语言发展的基础，拍手能帮宝宝感受节奏' },
+          { title:'脚踏车运动', lang:'cn', sub:'腿部练习', detail:'宝宝平躺，轻轻握住双脚做蹬自行车的动作，边做边唱儿歌。', tip:'帮助排气、促进腿部发育。每只脚各蹬10次' },
+          { title:'镜子游戏', lang:'cn', sub:'认识自己', detail:'抱着宝宝站在镜子前，指着镜子说"这是宝宝！这是妈妈！"', tip:'2-3个月的宝宝对镜子里的影像特别感兴趣，但还不知道那是自己' }
+        ]
+      },
+      { icon:'🗣️', title:'中文启蒙', type:'cn-word',
+        items:[
+          { title:'回应宝宝的发音', lang:'cn', sub:'咿呀对话', detail:'当宝宝发出"啊""哦""咕咕"时，模仿他的声音回应他。这是最早的"对话"。', tip:'停顿几秒等宝宝回应，让他体验"轮流发言"的节奏' },
+          { title:'常用叠词', lang:'cn', sub:'抱抱、灯灯、饭饭', detail:'用简单的叠词和宝宝说话："吃奶奶啦""看灯灯""抱抱宝宝"。', tip:'叠词是宝宝语言发展的"桥梁"，更容易被注意到和模仿' }
+        ]
+      },
+      { icon:'🗣️', title:'英文启蒙', type:'en-word',
+        items:[
+          { title:'Mama / Dada', lang:'en', sub:'第一个英文词', detail:'经常对着宝宝说"Mama在这里""Dada回来了"，用手指自己说Mama指爸爸说Dada。', tip:'世界上几乎所有语言中"妈妈""爸爸"的发音都很相似(ma/ba/da)，这是人类最自然的发声' },
+          { title:'Peekaboo!', lang:'en', sub:'躲猫猫', detail:'用手遮住脸说"Where is mama? ... Peekaboo!"然后露出笑脸。这是全世界宝宝最喜欢的游戏。', tip:'宝宝要到6-8个月才真正理解"物体恒存"，但2-3个月就可以开始玩，培养期待感' }
+        ]
+      }
+    ]
+  },
+  // ---------- 3-6 月 ----------
+  { stageKey:'3-6m', ageLabel:'3-6个月', ageDays:[91,180], desc:'抓握练习 + 声音模仿 + 翻身游戏',
+    sections:[
+      { icon:'🎵', title:'中文儿歌', type:'cn-song', open:false,
+        items:[
+          { title:'小白兔白又白', lang:'cn', sub:'动物认知', detail:'小白兔白又白\n两只耳朵竖起来\n爱吃萝卜爱吃菜\n蹦蹦跳跳真可爱', tip:'做兔耳朵手型放在头顶，蹦蹦跳跳' },
+          { title:'数鸭子', lang:'cn', sub:'数数启蒙', detail:'门前大桥下，游过一群鸭\n快来快来数一数，二四六七八\n嘎嘎嘎嘎真呀真多呀\n数不清到底多少鸭', tip:'配合数手指，从1数到5' },
+          { title:'拔萝卜', lang:'cn', sub:'合作游戏', detail:'拔萝卜，拔萝卜\n嘿呦嘿呦拔萝卜\n嘿呦嘿呦拔不动\n老太婆，快快来\n快来帮我们拔萝卜', tip:'拉着宝宝的双手做"拔"的动作' }
+        ]
+      },
+      { icon:'🎵', title:'英文儿歌', type:'en-song', open:false,
+        items:[
+          { title:'Old MacDonald Had a Farm', lang:'en', sub:'动物叫声歌', detail:'Old MacDonald had a farm, E-I-E-I-O\nAnd on his farm he had a cow, E-I-E-I-O\nWith a moo-moo here and a moo-moo there\nHere a moo, there a moo, everywhere a moo-moo', tip:'每次换一种动物和它的叫声(cow/moo, pig/oink, duck/quack)。中文大意：老麦克唐纳有个农场咿呀咿呀哟' },
+          { title:'If You\'re Happy and You Know It', lang:'en', sub:'动作歌', detail:"If you're happy and you know it, clap your hands (clap clap)\nIf you're happy and you know it, clap your hands (clap clap)\nIf you're happy and you know it, then your face will surely show it\nIf you're happy and you know it, clap your hands (clap clap)", tip:'配合拍手、跺脚、点头等动作。中文大意：如果开心你就拍拍手' },
+          { title:'Head, Shoulders, Knees & Toes', lang:'en', sub:'身体部位歌', detail:'Head, shoulders, knees and toes, knees and toes\nHead, shoulders, knees and toes, knees and toes\nAnd eyes and ears and mouth and nose\nHead, shoulders, knees and toes, knees and toes!', tip:'边唱边用手指出对应的身体部位，越唱越快！' }
+        ]
+      },
+      { icon:'👀', title:'彩色闪卡', type:'visual',
+        items:[
+          { title:'水果闪卡', lang:'cn', sub:'苹果、香蕉、橙子', detail:'打印或购买色彩鲜艳的水果图片，每次展示3-5张，每张展示2-3秒。', tip:'先指图片再说名称："这是——苹果！"停顿让宝宝看' },
+          { title:'动物闪卡', lang:'cn', sub:'猫、狗、兔子、鱼', detail:'大图+纯色背景的动物卡片，配合模仿动物的叫声。', tip:'猫咪图片配"喵~"，狗狗配"汪！"声音比图像更能吸引注意力' },
+          { title:'双语闪卡', lang:'cn', sub:'中英对照', detail:'正面中文"苹果"配图，背面英文"Apple"。每个词展示时间不超过3秒。', tip:'不用让宝宝学，纯输入即可。每天闪5-10张' }
+        ]
+      },
+      { icon:'📖', title:'中文绘本', type:'cn-book',
+        items:[
+          { title:'《好饿的毛毛虫》', lang:'cn', sub:'艾瑞·卡尔', detail:'从一颗小小的卵到最后变成美丽的蝴蝶，毛毛虫吃了各种食物。书中有真实的洞洞可以让宝宝手指穿过。', tip:'翻到不同的食物时做夸张的"啊呜"吃的声音' },
+          { title:'《蹦！》', lang:'cn', sub:'松冈达英', detail:'青蛙-蹦！猫咪-蹦！小狗-蹦！全书只有一个"蹦"字，配合动物跳跃的画面。', tip:'说到"蹦"的时候把宝宝举起来，他会咯咯笑' }
+        ]
+      },
+      { icon:'📖', title:'英文绘本', type:'en-book',
+        items:[
+          { title:"Where's Spot? (Eric Hill)", lang:'en', sub:'翻翻书经典', detail:'狗妈妈Sally到处找她的淘气小狗Spot。每页有一个可以翻开的小机关，藏着不同的动物。', tip:'问"Where is Spot?"然后翻开机关，用夸张的语气回应"No! It\'s a bear!"' },
+          { title:'Dear Zoo (Rod Campbell)', lang:'en', sub:'动物园来信', detail:'我给动物园写信请他们送一只宠物给我。每次送来一个动物但都有点"问题"——大象太大、狮子太凶……最后送来一只完美的小狗。', tip:'模仿每种动物的特征：大象太重了、长颈鹿太高了' }
+        ]
+      },
+      { icon:'🤲', title:'亲子游戏', type:'play',
+        items:[
+          { title:'抓握练习', lang:'cn', sub:'递玩具', detail:'把摇铃、牙胶等递到宝宝手里，让他抓握。最开始需要帮他把手指包住玩具，慢慢他就能自己抓了。', tip:'从细长型摇铃开始（更容易握），再到圆球形' },
+          { title:'俯卧抬头 (Tummy Time)', lang:'cn', sub:'每天必做', detail:'清醒时让宝宝趴着，前面放有趣的玩具或镜子吸引他抬头看。每天累计30-60分钟。', tip:'从每次2-3分钟开始，逐步延长。预防扁头、锻炼颈部背部力量' },
+          { title:'滚来滚去', lang:'cn', sub:'翻身游戏', detail:'让宝宝躺在毯子上，轻轻拉毯子一侧帮助他从仰卧翻到侧卧。配合声音"咕噜咕噜翻过去啦！"', tip:'不要在刚喂完奶时做，防止吐奶' }
+        ]
+      },
+      { icon:'🗣️', title:'中文启蒙', type:'cn-word',
+        items:[
+          { title:'拟声词', lang:'cn', sub:'汪汪、喵喵、滴滴', detail:'看到狗说"汪汪"，看到汽车说"滴滴滴"，听到门铃说"叮咚"。', tip:'拟声词是最容易模仿的词，宝宝通常在6个月左右开始尝试模仿' },
+          { title:'指认物品', lang:'cn', sub:'灯、门、球', detail:'抱着宝宝在房间里走，指着灯说"灯"，开灯关灯让他看到变化。', tip:'每次只指认1-2个物品，重复多次。选择高频出现的大件物品' }
+        ]
+      },
+      { icon:'🗣️', title:'英文启蒙', type:'en-word',
+        items:[
+          { title:'Animal Sounds', lang:'en', sub:'动物叫声学英语', detail:'Cow says moo, Dog says woof, Cat says meow, Duck says quack。模仿动物叫声是宝宝学英语最好的切入点！', tip:'叫声全世界都一样，但名字不同。先教叫声再教名字' },
+          { title:'Body Parts', lang:'en', sub:'身体部位', detail:'指着宝宝的鼻子说nose，耳朵说ear，嘴巴说mouth。每天洗澡时是教身体部位的最佳时机。', tip:'从脸部开始(最多触摸)，再到手脚。每次只教2-3个部位' }
+        ]
+      }
+    ]
+  },
+  // ---------- 6-9 月 ----------
+  { stageKey:'6-9m', ageLabel:'6-9个月', ageDays:[181,270], desc:'坐立训练 + 发音练习 + 躲猫猫',
+    sections:[
+      { icon:'🎵', title:'中文儿歌', type:'cn-song', open:false,
+        items:[
+          { title:'打电话', lang:'cn', sub:'社交模拟', detail:'两个小娃娃呀，正在打电话呀\n喂喂喂，你在哪里呀\n哎哎哎，我在幼儿园', tip:'拿一个玩具电话和宝宝轮流"打电话"' },
+          { title:'五指歌', lang:'cn', sub:'手指认知', detail:'一根手指点点，两根手指剪剪\n三根手指弯弯，四根手指叉叉\n五根手指变朵花', tip:'握着宝宝的手做每一个动作，最后举起来说"花开了"' },
+          { title:'小手拍拍', lang:'cn', sub:'身体认知', detail:'小手拍拍，小手拍拍\n手指伸出来，手指伸出来\n眼睛在哪里，眼睛在这里\n用手指出来，用手指出来', tip:'每次唱到部位时要轻触宝宝的那个部位' }
+        ]
+      },
+      { icon:'🎵', title:'英文儿歌', type:'en-song', open:false,
+        items:[
+          { title:'Baby Shark', lang:'en', sub:'全球最火儿歌', detail:'Baby shark, doo doo doo doo doo doo\nBaby shark, doo doo doo doo doo doo\nBaby shark!\n(Mommy shark, Daddy shark, Grandma shark...)', tip:'配合手指做小鲨鱼嘴巴张合的动作。歌词极简，重复性高' },
+          { title:'Five Little Monkeys', lang:'en', sub:'数数+跳跃', detail:'Five little monkeys jumping on the bed\nOne fell off and bumped his head\nMama called the doctor and the doctor said\n"No more monkeys jumping on the bed!"', tip:'用手指当小猴子在床上跳，然后"摔下来"时演夸张的摔倒' },
+          { title:'BINGO', lang:'en', sub:'拍手拼字歌', detail:'There was a farmer had a dog and Bingo was his name-o\nB-I-N-G-O, B-I-N-G-O, B-I-N-G-O\nAnd Bingo was his name-o!', tip:'逐拍手替代字母：第一次唱BINGO，第二次用拍手替代B，第三次替代B-I……培养节奏感' }
+        ]
+      },
+      { icon:'📖', title:'中文绘本', type:'cn-book',
+        items:[
+          { title:'《我爸爸》《我妈妈》', lang:'cn', sub:'安东尼·布朗', detail:'"这是我爸爸，他真的很棒！"用孩子的视角赞美爸爸妈妈，画面温暖幽默。', tip:'念到"我爸爸吃得像马一样多"时做出搞笑的表情' }
+        ]
+      },
+      { icon:'📖', title:'英文绘本', type:'en-book',
+        items:[
+          { title:'The Very Hungry Caterpillar (Eric Carle)', lang:'en', sub:'饥饿的毛毛虫', detail:'星期一到星期日，毛毛虫吃了各种食物变成蝴蝶。学习星期几、食物、数数。', tip:'用手指戳书上的洞洞，读每种食物时模仿吃的动作' },
+          { title:'Goodnight Moon (Margaret Wise Brown)', lang:'en', sub:'晚安月亮', detail:'小兔子睡前和房间里每样东西说晚安。"Goodnight room, goodnight moon, goodnight cow jumping over the moon."', tip:'睡前固定读这一本，安静、缓慢、温柔的语气' }
+        ]
+      },
+      { icon:'🤲', title:'亲子游戏', type:'play',
+        items:[
+          { title:'躲猫猫Peekaboo', lang:'cn', sub:'建立物体恒存概念', detail:'用毛巾盖住玩具，问"玩具去哪了？"然后掀开"在这里！"再用双手遮住自己的脸和宝宝玩。', tip:'6-8个月宝宝开始理解"看不见的东西也存在"，这是认知发育的重要里程碑' },
+          { title:'坐立练习', lang:'cn', sub:'靠坐→独坐', detail:'用哺乳枕或靠垫让宝宝靠着坐，前面放有趣的玩具吸引他保持平衡。', tip:'每次5-10分钟。宝宝一开始会用手撑地保持平衡，慢慢就能放开手独坐' },
+          { title:'撕纸游戏', lang:'cn', sub:'精细动作训练', detail:'给宝宝一些干净的旧报纸或软纸，让他随意撕扯。', tip:'这个阶段宝宝特别喜欢撕纸，既锻炼手指力量又满足好奇心。注意不要太小的纸片入口' }
+        ]
+      },
+      { icon:'🗣️', title:'中文启蒙', type:'cn-word',
+        items:[
+          { title:'叠词扩展', lang:'cn', sub:'爸爸妈妈、奶奶抱抱', detail:'把宝宝会发的单个音变成叠词：ma→妈妈，ba→爸爸，na→奶奶。', tip:'6个月左右宝宝开始发"ba-ba""ma-ma"，虽然不一定是叫爸妈，但要积极回应' },
+          { title:'手势+语言', lang:'cn', sub:'再见、拍拍手', detail:'边说"再见"边挥手，边说"欢迎"边拍手。握住宝宝的手帮他做动作。', tip:'宝宝可能先学会手势(8-9个月)再学会说对应的词' }
+        ]
+      },
+      { icon:'🗣️', title:'英文启蒙', type:'en-word',
+        items:[
+          { title:'More / Up / Down', lang:'en', sub:'需求表达', detail:'喂饭时问"More?"再给一口；抱起来时说"Up!"，放下来时说"Down~"。', tip:'配合夸张的手势：Up=手指向上，Down=手指向下。宝宝很快会用手势表达' },
+          { title:'Bye-bye / Hi', lang:'en', sub:'社交用语', detail:'有人离开时挥手说"Bye-bye!"，有人来时挥手说"Hi!"。每天重复。', tip:'这是宝宝最早理解并模仿的英文社交词，通常8-10个月就能做出回应' }
+        ]
+      }
+    ]
+  },
+  // ---------- 9-12 月 ----------
+  { stageKey:'9-12m', ageLabel:'9-12个月', ageDays:[271,365], desc:'爬行游戏 + 指认物品 + 简单指令',
+    sections:[
+      { icon:'🎵', title:'中文儿歌', type:'cn-song', open:false,
+        items:[
+          { title:'小毛驴', lang:'cn', sub:'幽默童谣', detail:'我有一只小毛驴我从来也不骑\n有一天我心血来潮骑着去赶集\n我手里拿着小皮鞭我心里正得意\n不知怎么哗啦啦啦我摔了一身泥', tip:'唱到"哗啦啦啦"时做摔倒的动作，把宝宝逗笑' },
+          { title:'新年好', lang:'cn', sub:'问候歌', detail:'新年好呀，新年好呀\n祝贺大家新年好\n我们唱歌，我们跳舞\n祝贺大家新年好', tip:'拍手+摇摆身体，培养节奏感和社交意识' },
+          { title:'世上只有妈妈好', lang:'cn', sub:'亲情歌', detail:'世上只有妈妈好\n有妈的孩子像块宝\n投进妈妈的怀抱\n幸福享不了', tip:'唱的时候紧紧抱着宝宝，让他感受到音乐里的爱' }
+        ]
+      },
+      { icon:'🎵', title:'英文儿歌', type:'en-song', open:false,
+        items:[
+          { title:'The Wheels on the Bus', lang:'en', sub:'公共汽车歌', detail:'The wheels on the bus go round and round, round and round, round and round\n(verse 2: wipers go swish swish swish; v3: horn goes beep beep beep; v4: babies go wah wah wah)', tip:'每段配合不同动作：轮子转、雨刷摆、喇叭按、宝宝哭。中文大意：公交车轮子转转转' },
+          { title:'One Little Finger', lang:'en', sub:'手指指认歌', detail:'One little finger, one little finger, one little finger\nTap tap tap!\nPoint your finger up, point your finger down\nPut it on your head (nose / chin / arm / leg / foot...)', tip:'用手指指出各个身体部位，每次换一个新部位' }
+        ]
+      },
+      { icon:'📖', title:'中文绘本', type:'cn-book',
+        items:[
+          { title:'《小熊宝宝》系列', lang:'cn', sub:'佐佐木洋子', detail:'包括《你好》《刷牙》《洗澡》《拉㞎㞎》等，画风可爱内容贴近日常。', tip:'每本的情节都是宝宝日常会经历的事，读完可以在生活中重现' }
+        ]
+      },
+      { icon:'📖', title:'英文绘本', type:'en-book',
+        items:[
+          { title:'First 100 Words (Roger Priddy)', lang:'en', sub:'100个英文启蒙词', detail:'按主题分类的100个日常词汇：颜色、动物、食物、交通工具、身体部位等，每词配实物照片。', tip:'不要求一次看完，每天翻几页，指着图片念单词即可' },
+          { title:"Moo, Baa, La La La (Sandra Boynton)", lang:'en', sub:'搞笑动物发声书', detail:'"A cow says MOO. A sheep says BAA. Three singing pigs say LA LA LA!" 简短押韵，动物叫声幽默。', tip:'每种动物叫声用夸张的语气模仿，宝宝会跟着笑' }
+        ]
+      },
+      { icon:'🤲', title:'亲子游戏', type:'play',
+        items:[
+          { title:'爬行大赛', lang:'cn', sub:'设置障碍物', detail:'在地板上用枕头、靠垫设置简单"障碍物"，引导宝宝爬过。', tip:'拿一个宝宝喜欢的玩具放在前面吸引他爬过去。爬行对大脑双侧协调发育至关重要' },
+          { title:'豆子搬家', lang:'cn', sub:'拇指食指对捏', detail:'准备一个碗和一些大颗的豆子(黄豆大小以上)，示范用拇指和食指捏起豆子放进碗里。', tip:'全程必须在旁边看护！防止宝宝吃豆子。空的零食盒也可以替代' },
+          { title:'打击乐', lang:'cn', sub:'敲敲打打', detail:'给宝宝一个木勺和倒扣的盆或盒子，让他敲敲打打。', tip:'所有宝宝都喜欢制造声音。这是最早的音乐启蒙' }
+        ]
+      },
+      { icon:'🗣️', title:'中文启蒙', type:'cn-word',
+        items:[
+          { title:'命名万物', lang:'cn', sub:'每指一件物品都说名字', detail:'宝宝开始用食指点东西了。他指什么，你就说出那件东西的名字：灯！水杯！鞋子！', tip:'这是语言爆发期前的关键阶段，每指一次都是一次"教学机会"' },
+          { title:'简单指令', lang:'cn', sub:'把球给妈妈、过来', detail:'给宝宝简单的指令让他理解。"把球给妈妈"配合伸出的手；"过来"配合拍手。', tip:'做出来就大力表扬！"好棒！宝宝听懂妈妈的话了！"' }
+        ]
+      },
+      { icon:'🗣️', title:'英文启蒙', type:'en-word',
+        items:[
+          { title:'Food Words', lang:'en', sub:'食物英文', detail:'milk, water, apple, banana, cookie, bread, egg, rice。每次吃的时候说英文名。', tip:'"More milk?" "Eat banana!" 配合实物效果翻倍' },
+          { title:'Action Words', lang:'en', sub:'动作英文', detail:'clap, wave, kiss, hug, eat, sleep, sit, stand。每个动作边做边说。', tip:'每次做一个动作就说出对应的英文词，不做翻译，让宝宝建立直接联想' }
+        ]
+      }
+    ]
+  },
+  // ---------- 12-18 月 ----------
+  { stageKey:'12-18m', ageLabel:'12-18个月', ageDays:[366,540], desc:'走路练习 + 形状配对 + 单词爆发',
+    sections:[
+      { icon:'🎵', title:'中文儿歌', type:'cn-song', open:false,
+        items:[
+          { title:'小老鼠上灯台', lang:'cn', sub:'经典童谣', detail:'小老鼠上灯台，偷油吃下不来\n喵喵喵猫来了，叽里咕噜滚下来', tip:'用手指从宝宝手臂"爬"上去，说到"滚下来"时快速滑下来，宝宝会大笑' },
+          { title:'大头儿子小头爸爸', lang:'cn', sub:'动画金曲', detail:'大头儿子小头爸爸\n一对好朋友快乐父子俩\n儿子的头大手儿小\n爸爸的头小手儿很大', tip:'指着爸爸和宝宝的头对比，做大小手势' }
+        ]
+      },
+      { icon:'🎵', title:'英文儿歌', type:'en-song', open:false,
+        items:[
+          { title:'ABC Song', lang:'en', sub:'字母歌', detail:'A-B-C-D-E-F-G\nH-I-J-K-L-M-N-O-P\nQ-R-S, T-U-V\nW-X, Y and Z\nNow I know my ABCs\nNext time won\'t you sing with me', tip:'手指字母表挂图，边指边唱。不需要宝宝认字母，感受旋律即可' },
+          { title:'Rain Rain Go Away', lang:'en', sub:'雨天歌', detail:'Rain, rain, go away\nCome again another day\nLittle baby wants to play\nRain, rain, go away', tip:'中文大意：雨啊雨啊你走开，改天再来，小宝宝想出去玩。下雨天的专属歌曲' },
+          { title:'Mary Had a Little Lamb', lang:'en', sub:'玛丽有只小羊羔', detail:'Mary had a little lamb, little lamb, little lamb\nMary had a little lamb, its fleece was white as snow\nAnd everywhere that Mary went, Mary went, Mary went\nEverywhere that Mary went, the lamb was sure to go', tip:'经典英文童谣，也是最著名的英语启蒙歌曲之一。中文大意：玛丽有只小羊羔毛像雪一样白' }
+        ]
+      },
+      { icon:'📖', title:'中文绘本', type:'cn-book',
+        items:[
+          { title:'《猜猜我有多爱你》', lang:'cn', sub:'山姆·麦克布雷尼', detail:'小兔子和大兔子比赛谁的爱更多："我的手举得有多高，我就有多爱你""我爱你一直到月亮那里——再从月亮上回到这里来。"', tip:'这是最经典的亲子绘本之一，读的时候可以像书里一样张开手臂、举高、跳起来' }
+        ]
+      },
+      { icon:'📖', title:'英文绘本', type:'en-book',
+        items:[
+          { title:'Chicka Chicka Boom Boom', lang:'en', sub:'字母树', detail:'A told B, and B told C, "I\'ll meet you at the top of the coconut tree!" 26个字母爬椰子树最后掉下来的故事。', tip:'韵律感极强，读到Boom Boom时拍手或跺脚' },
+          { title:'Pete the Cat: I Love My White Shoes', lang:'en', sub:'皮特猫', detail:'Pete the Cat穿着白色新鞋出门，一路踩到了草莓堆(变红)、蓝莓堆(变蓝)、泥巴(变棕)……但Pete从来不哭。', tip:'反复出现的句子"Did Pete cry? Goodness no!"是很好的互动点' }
+        ]
+      },
+      { icon:'🤲', title:'亲子游戏', type:'play',
+        items:[
+          { title:'形状配对', lang:'cn', sub:'积木+形状盒', detail:'给宝宝一个形状配对盒(圆形、方形、三角形)，示范如何把圆形放进圆洞里。', tip:'从圆形开始(最容易)，每次只给1-2个形状，减少挫败感' },
+          { title:'你扔我捡', lang:'cn', sub:'理解因果关系', detail:'宝宝特别喜欢把东西扔到地上让你捡。这是他在学习"扔=掉下来"的因果关系。', tip:'虽然很烦，但这是重要的发展阶段。把易碎品收好，给他软球或布玩具扔' }
+        ]
+      },
+      { icon:'🗣️', title:'中文启蒙', type:'cn-word',
+        items:[
+          { title:'动物叫声', lang:'cn', sub:'问"狗狗怎么叫"', detail:'指着动物图片问"小狗狗怎么叫？"然后自问自答"汪！汪汪！"。', tip:'宝宝通常先学会动物叫声(拟声词)再学会动物名称' },
+          { title:'二词句', lang:'cn', sub:'妈妈抱、宝宝吃', detail:'教宝宝把两个词连在一起说。"妈妈抱""宝宝吃""出去玩"。', tip:'如果宝宝说"抱"，你可以扩展"妈妈抱"，让宝宝重复。这是从单字到句子的关键过渡' }
+        ]
+      },
+      { icon:'🗣️', title:'英文启蒙', type:'en-word',
+        items:[
+          { title:'Colors', lang:'en', sub:'颜色', detail:'red, blue, yellow, green。每次看到对应颜色就指出来。', tip:'从红色开始(宝宝认识最早的颜色)，每次只学一个。指着红色的积木说red，指着红色的衣服说red' },
+          { title:'Numbers 1-5', lang:'en', sub:'数数', detail:'one, two, three, four, five。上楼梯时数、吃零食时数、翻书时数。', tip:'做对应数量的动作：one kiss, two kisses, three kisses! 把数和行动联系起来' }
+        ]
+      }
+    ]
+  },
+  // ---------- 18-24 月 ----------
+  { stageKey:'18-24m', ageLabel:'18-24个月', ageDays:[541,730], desc:'颜色认知 + 短句表达 + 涂鸦绘画',
+    sections:[
+      { icon:'🎵', title:'中文儿歌', type:'cn-song', open:false,
+        items:[
+          { title:'虫儿飞', lang:'cn', sub:'温馨童谣', detail:'黑黑的天空低垂\n亮亮的繁星相随\n虫儿飞，虫儿飞\n你在思念谁', tip:'非常优美的旋律，适合睡前唱。可以和宝宝一起仰望看星星' },
+          { title:'学习雷锋好榜样', lang:'cn', sub:'经典儿歌', detail:'学习雷锋好榜样\n忠于革命忠于党\n爱憎分明不忘本\n立场坚定斗志强', tip:'虽然宝宝不完全理解，但朗朗上口的节奏适合跟唱' }
+        ]
+      },
+      { icon:'🎵', title:'英文儿歌', type:'en-song', open:false,
+        items:[
+          { title:'London Bridge Is Falling Down', lang:'en', sub:'伦敦桥', detail:'London Bridge is falling down, falling down, falling down\nLondon Bridge is falling down, my fair lady', tip:'两个人搭成桥，让宝宝从下面钻过去，唱到falling down时轻轻"塌"下来' },
+          { title:'Baa Baa Black Sheep', lang:'en', sub:'黑绵羊', detail:'Baa baa black sheep, have you any wool?\nYes sir, yes sir, three bags full\nOne for the master, one for the dame\nAnd one for the little boy who lives down the lane', tip:'三段分配"毛线"的节奏很好记，配合数手指1-2-3' },
+          { title:'Humpty Dumpty', lang:'en', sub:'蛋头先生', detail:'Humpty Dumpty sat on a wall\nHumpty Dumpty had a great fall\nAll the king\'s horses and all the king\'s men\nCouldn\'t put Humpty together again', tip:'用煮熟的鸡蛋画上脸讲这个故事，然后剥开吃掉，宝宝会觉得很有趣' }
+        ]
+      },
+      { icon:'📖', title:'中文绘本', type:'cn-book',
+        items:[
+          { title:'《大卫不可以》', lang:'cn', sub:'大卫·香农', detail:'调皮的大卫总是做一些"不可以"的事——爬高高拿饼干、一身泥踩进来……但最后妈妈还是说"大卫乖，我爱你"。', tip:'宝宝在这个绘本里看到自己的影子，特别有共鸣' }
+        ]
+      },
+      { icon:'📖', title:'英文绘本', type:'en-book',
+        items:[
+          { title:"We're Going on a Bear Hunt", lang:'en', sub:'我们去猎熊', detail:'一家人穿过草地、河流、泥巴、暴风雪去找一只熊……We\'re going on a bear hunt, we\'re going to catch a big one! 然后真的遇到熊了，又一路跑回家。', tip:'每穿过一个地方都有对应的拟声词(Swishy swashy! Splash splosh!)配合身体动作' },
+          { title:'Llama Llama Red Pajama', lang:'en', sub:'羊驼拉玛', detail:'小羊驼独自睡觉时感到孤单，哭着喊妈妈。妈妈来了告诉他"妈妈就在附近，即使你看不到我"。', tip:'应对分离焦虑的好故事。押韵且节奏感强' }
+        ]
+      },
+      { icon:'🤲', title:'亲子游戏', type:'play',
+        items:[
+          { title:'涂鸦绘画', lang:'cn', sub:'蜡笔+大纸', detail:'给宝宝大张的纸和无毒蜡笔，让他自由涂鸦。不需要画出任何东西，画线就是很好的开始。', tip:'2岁前的涂鸦通常是随机的线条，这是书写能力的前身' },
+          { title:'角色扮演', lang:'cn', sub:'过家家', detail:'给宝宝一个玩具电话说"喂？奶奶吗？"给他一个空杯子说"喝水水"。', tip:'假装游戏说明宝宝开始发展符号思维能力，这是语言和认知发展的里程碑' }
+        ]
+      },
+      { icon:'🗣️', title:'中文启蒙', type:'cn-word',
+        items:[
+          { title:'简短句子', lang:'cn', sub:'三~五个词的句子', detail:'引导宝宝说完整的短句。"宝宝要什么？""宝宝要喝水水。"', tip:'不要纠错，而是正确示范。宝宝说"狗狗跑"，你说"对！狗狗在跑"' },
+          { title:'问简单问题', lang:'cn', sub:'这是什么/谁呀', detail:'指着图画书的物品问"这是什么？""这是谁呀？"等宝宝回答。', tip:'如果宝宝不回答就自问自答，然后翻到下一页再问。不施压' }
+        ]
+      },
+      { icon:'🗣️', title:'英文启蒙', type:'en-word',
+        items:[
+          { title:'Simple Questions', lang:'en', sub:'英文简单问答', detail:'指着书上的物体问"What\'s this?"然后自己回答"It\'s a dog!"。让宝宝习惯英文问答模式。', tip:'不需要宝宝用英文回答——输入阶段以听懂为主。你能问他用中文答也没关系' },
+          { title:'Please / Thank you', lang:'en', sub:'礼貌用语', detail:'给宝宝东西时说"Here you go!"鼓励他说"Thank you"或做谢谢的动作。', tip:'手势先行，语言跟上。宝宝可能先会点头或做谢谢手势' }
+        ]
+      }
+    ]
+  },
+  // ---------- 24-36 月 ----------
+  { stageKey:'24-36m', ageLabel:'24-36个月', ageDays:[731,1095], desc:'数数123 + 儿歌跟唱 + 角色扮演',
+    sections:[
+      { icon:'🎵', title:'中文儿歌', type:'cn-song', open:false,
+        items:[
+          { title:'读书郎', lang:'cn', sub:'上学歌', detail:'小呀嘛小儿郎\n背着那书包上学堂\n不怕太阳晒\n也不怕那风雨狂', tip:'可以配合背着书包走的动作，让宝宝表演' },
+          { title:'春天在哪里', lang:'cn', sub:'季节认知', detail:'春天在哪里呀春天在哪里\n春天在那青翠的山林里\n这里有红花呀这里有绿草\n还有那会唱歌的小黄鹂', tip:'春天带宝宝去公园，指着红花绿草唱歌' }
+        ]
+      },
+      { icon:'🎵', title:'英文儿歌', type:'en-song', open:false,
+        items:[
+          { title:'Five Little Ducks', lang:'en', sub:'五只小鸭子数数歌', detail:'Five little ducks went out one day\nOver the hill and far away\nMother duck said "Quack, quack, quack, quack!"\nBut only four little ducks came back\n(递减到零只，最后五只都回来了)', tip:'用手指比数字，少一只就放下一个手指。中文大意：五只小鸭子出门翻过山走远了鸭妈妈叫只有四只回来' },
+          { title:'Ten in the Bed', lang:'en', sub:'十只小熊床上滚', detail:'There were ten in the bed and the little one said\n"Roll over, roll over!"\nSo they all rolled over and one fell out\n(从10倒数到1)', tip:'躺在地板上和宝宝一起"滚"，每滚一次就少一个人' },
+          { title:'Walking Walking', lang:'en', sub:'走走停停', detail:'Walking walking, walking walking\nHop hop hop, hop hop hop\nRunning running running, running running running\nNow let\'s stop, now let\'s stop', tip:'和宝宝一起做动作：走→跳→跑→停。经典TPR(全身反应)英语教学法' },
+          { title:'Open Shut Them', lang:'en', sub:'反义词歌', detail:'Open shut them, open shut them\nGive a little clap clap clap\nOpen shut them, open shut them\nPut them in your lap lap lap\nBig and small, fast and slow, loud and quiet...', tip:'每次学一对反义词：开/合、大/小、快/慢、大声/安静。配合夸张的动作' }
+        ]
+      },
+      { icon:'📖', title:'中文绘本', type:'cn-book',
+        items:[
+          { title:'《南瓜汤》', lang:'cn', sub:'海伦·库柏', detail:'猫、松鼠和鸭子一起煮最好喝的南瓜汤，直到有一天鸭子想搅汤，友谊面临考验……', tip:'关于友谊和合作的温馨故事，画面精美如油画' }
+        ]
+      },
+      { icon:'📖', title:'英文绘本', type:'en-book',
+        items:[
+          { title:"Don't Let the Pigeon Drive the Bus (Mo Willems)", lang:'en', sub:'别让鸽子开巴士', detail:'巴士司机离开时说"别让鸽子开巴士！"然后鸽子想尽各种办法说服你让它开车。', tip:'宝宝最喜欢对鸽子喊"No!"这是绝佳的互动绘本，每次鸽子恳求时让宝宝回应' },
+          { title:'The Gruffalo (Julia Donaldson)', lang:'en', sub:'咕噜牛', detail:'小老鼠在森林里散步，遇到想吃它的动物们，它编造了一个可怕的怪物"咕噜牛"把他们都吓跑了——结果咕噜牛真的出现了。', tip:'押韵优美，每段结构重复。中文版和英文版都值得收藏' }
+        ]
+      },
+      { icon:'🤲', title:'亲子游戏', type:'play',
+        items:[
+          { title:'数数123', lang:'cn', sub:'生活中的数学', detail:'上下楼梯数台阶，吃蓝莓数个数，玩积木数块数。1-2-3-4-5！', tip:'不需要专门教，让数字成为自然生活的一部分。指着实物数，而不是背诵' },
+          { title:'角色扮演升级版', lang:'cn', sub:'医生/厨师/老师', detail:'准备简单的道具(医生玩具、小锅子、小黑板)，和宝宝轮流扮演不同角色。', tip:'2-3岁是想象力爆发期，角色扮演是最有价值的游戏形式之一' },
+          { title:'剪刀练习', lang:'cn', sub:'安全剪刀+彩纸', detail:'给宝宝儿童安全剪刀和彩色纸条，教他剪断纸条。', tip:'剪刀是复杂的精细动作工具，需要手指的协调配合。剪断是最容易的(一刀切)' }
+        ]
+      },
+      { icon:'🗣️', title:'中文启蒙', type:'cn-word',
+        items:[
+          { title:'讲故事时间', lang:'cn', sub:'鼓励复述', detail:'读完绘本问宝宝"然后呢？""小兔子去了哪里？"鼓励他试着复述故事。', tip:'一开始可能只是断断续续的词，没关系，建立"故事有开始、中间、结尾"的意识' },
+          { title:'为什么/怎么办', lang:'cn', sub:'因果推理', detail:'回答宝宝的"十万个为什么"（这个阶段宝宝会疯狂问为什么），也反问"你觉得为什么呢？"', tip:'鼓励他自己思考，而不是直接给答案' }
+        ]
+      },
+      { icon:'🗣️', title:'英文启蒙', type:'en-word',
+        items:[
+          { title:'Short Sentences', lang:'en', sub:'英文短句', detail:'开始说简单的英文句子：I see a dog. I want juice. Let\'s go! It\'s big!', tip:'每句话3-5个词，结构一致。重复句式是语言学习的核心方法' },
+          { title:"What's this? / Where is...?", lang:'en', sub:'英文问答', detail:'指着物品问What\'s this? 藏在背后的玩具问Where is the ball?', tip:'这个阶段宝宝喜欢回答why/what/where问题。用英文问用中文答也没关系' },
+          { title:'Weather & Feelings', lang:'en', sub:'天气+情绪英文', detail:'sunny, rainy, cloudy, windy / happy, sad, angry, sleepy。每天起床看看窗外说天气，问问宝宝什么心情。', tip:'画一个简单的表情表贴在墙上，每天指一指"今天开心吗？Happy?"' }
+        ]
+      }
+    ]
+  }
+];
+
+// ============================================================
+//  RENDER EARLY EDUCATION
+// ============================================================
+var eduStage = null;
+
+function renderEarlyEdu(){
+  try {
+  var html = '';
+  var birth = appData.settings.birthDate;
+  var age = U.age(birth, U.today());
+  var currentDays = age.totalDays;
+
+  // Find current stage
+  var currentStageIdx = 0;
+  for (var i = 0; i < EARLY_EDU.length; i++) {
+    var s = EARLY_EDU[i];
+    if (currentDays >= s.ageDays[0] && currentDays <= s.ageDays[1]) { currentStageIdx = i; break; }
+    if (currentDays > s.ageDays[1]) currentStageIdx = i;
+  }
+  if (!eduStage) eduStage = EARLY_EDU[currentStageIdx].stageKey;
+  var stage = EARLY_EDU.find(function(s){ return s.stageKey === eduStage; });
+  if (!stage) { stage = EARLY_EDU[currentStageIdx]; eduStage = stage.stageKey; }
+
+  // Stage header
+  html += '<div class="edu-stage-header"><div class="edu-stage-title">'+stage.ageLabel+'</div><div class="edu-stage-desc">'+stage.desc+'</div></div>';
+
+  // Stage chips
+  html += '<div class="edu-stages" id="edu-stages">';
+  for (var i = 0; i < EARLY_EDU.length; i++) {
+    var st = EARLY_EDU[i];
+    var cls = (st.stageKey === eduStage) ? ' active' : '';
+    if (st.ageDays[0] > currentDays) cls += ' future';
+    html += '<button class="edu-stg-chip'+cls+'" data-stage="'+st.stageKey+'">'+st.ageLabel+'</button>';
+  }
+  html += '</div>';
+
+  // Sections
+  for (var i = 0; i < stage.sections.length; i++) {
+    var sec = stage.sections[i];
+    html += '<div class="edu-section"><div class="edu-sec-header" data-sec="'+i+'"><span class="edu-sec-icon">'+sec.icon+'</span><span class="edu-sec-title">'+sec.title+'</span><span class="edu-sec-count">'+sec.items.length+'</span><span class="edu-sec-arrow'+(sec.open?' open':'')+'">▾</span></div>';
+    html += '<div class="edu-sec-body'+(sec.open?' open':'')+'" id="edu-body-'+i+'">';
+    for (var j = 0; j < sec.items.length; j++) {
+      var item = sec.items[j];
+      html += '<div class="edu-item" onclick="showEduDetail(\''+stage.stageKey+'\','+i+','+j+')"><span class="edu-item-emoji">'+(item.sub.charAt(0)||'📝')+'</span><div class="edu-item-info"><div class="edu-item-title">'+U.esc(item.title)+'</div><div class="edu-item-sub">'+U.esc(item.sub)+'</div></div>'+(item.lang?'<span class="edu-item-lang '+(item.lang==='en'?'en':'cn')+'">'+(item.lang==='en'?'EN':'中')+'</span>':'')+'</div>';
+    }
+    html += '</div></div>';
+  }
+
+  $('#page-earlyedu').innerHTML = html;
+
+  // Bind events
+  setTimeout(function(){
+    // Stage chips
+    var chips = document.querySelectorAll('#edu-stages .edu-stg-chip');
+    chips.forEach(function(ch) {
+      ch.addEventListener('click', function() {
+        eduStage = this.dataset.stage;
+        renderEarlyEdu();
+      });
+    });
+    // Section toggle
+    var headers = document.querySelectorAll('#page-earlyedu .edu-sec-header');
+    headers.forEach(function(h) {
+      h.addEventListener('click', function() {
+        var idx = this.dataset.sec;
+        var body = document.getElementById('edu-body-'+idx);
+        if (body) {
+          var open = body.classList.toggle('open');
+          var arrow = this.querySelector('.edu-sec-arrow');
+          if (arrow) arrow.classList.toggle('open', open);
+        }
+      });
+    });
+  }, 100);
+
+  } catch(e) { $('#page-earlyedu').innerHTML = '<div class="empty"><div class="empty-icon">🎓</div><div class="empty-title">出错了</div><div class="empty-desc">'+e.message+'</div></div>'; }
+}
+
+function showEduDetail(stageKey, secIdx, itemIdx){
+  var stage = EARLY_EDU.find(function(s){ return s.stageKey === stageKey; });
+  if (!stage) return;
+  var item = stage.sections[secIdx].items[itemIdx];
+  if (!item) return;
+
+  var html = '<div style="font-size:1.2rem;font-weight:600;margin-bottom:4px;color:#4E342E">'+U.esc(item.title)+'</div>';
+  html += '<div style="font-size:.8rem;color:#BCAAA4;margin-bottom:12px">'+U.esc(item.sub)+' · '+stage.ageLabel+'</div>';
+  if (item.detail) {
+    html += '<div class="edu-detail-lyrics">'+U.esc(item.detail)+'</div>';
+  }
+  if (item.tip) {
+    html += '<div class="edu-detail-tip">💡 '+U.esc(item.tip)+'</div>';
+  }
+
+  showModal(item.title, html, null);
+}
 // ============================================================
 function renderHealthFiles(r){
   let html='';
