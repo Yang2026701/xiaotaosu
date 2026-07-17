@@ -2591,8 +2591,13 @@ function drawShareCard(week,weekGrowth,weekLogs,weekMilestones,weekDiary,weekPho
         roundRect(ctx,px-4,photoY-4,pw+8,ph+24,6);
         ctx.fill();
         ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-        // Photo
-        try{ctx.drawImage(loadedImgs[pi],px,photoY,pw,ph);}catch(e){}
+        // Photo (catch cross-origin taint errors)
+        try{
+          ctx.save();
+          roundRect(ctx,px,photoY,pw,ph,4);ctx.clip();
+          ctx.drawImage(loadedImgs[pi],px,photoY,pw,ph);
+          ctx.restore();
+        }catch(e){}
         // Date caption
         var pday=U.fmtShort(weekPhotos[pi]?weekPhotos[pi].date:'');
         ctx.fillStyle='#A09085';ctx.font='14px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
@@ -2638,7 +2643,42 @@ function drawShareCard(week,weekGrowth,weekLogs,weekMilestones,weekDiary,weekPho
     ctx.fillText('本周记录了 '+statText,W/2,footerY+62);
   }
 
-  return c.toDataURL('image/png');
+  // toDataURL may throw SecurityError if canvas is tainted by cross-origin images
+  try{return c.toDataURL('image/png');}
+  catch(e){
+    // Fallback: redraw without photos
+    try{
+      var fbCanvas=document.createElement('canvas');
+      fbCanvas.width=W*dpr;fbCanvas.height=H*dpr;
+      fbCanvas.style.width=W+'px';fbCanvas.style.height=H+'px';
+      var fbCtx=fbCanvas.getContext('2d');
+      fbCtx.scale(dpr,dpr);
+      return drawShareCardFallback(fbCtx,week,weekGrowth,weekLogs,weekMilestones,weekDiary,W,H);
+    }catch(e2){throw new Error('生成失败，请重试');}
+  }
+}
+
+function drawShareCardFallback(ctx,week,weekGrowth,weekLogs,weekMilestones,weekDiary,W,H){
+  var bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#FEF9F5');bg.addColorStop(0.3,'#FFF5F0');bg.addColorStop(0.6,'#FFF0EB');bg.addColorStop(1,'#FEF7F3');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  var stripe=ctx.createLinearGradient(0,0,W,0);
+  stripe.addColorStop(0,'#FFA07A');stripe.addColorStop(0.5,'#FFB6C1');stripe.addColorStop(1,'#FFD1C4');
+  ctx.fillStyle=stripe;ctx.fillRect(0,0,W,6);
+  ctx.fillStyle='#FFA07A';ctx.font='bold 42px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('🍑',W/2,82);
+  var babyName=appData.settings.babyName||'宝宝';
+  ctx.fillStyle='#4E342E';ctx.font='bold 44px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+  ctx.fillText(babyName+'的成长周报',W/2,152);
+  ctx.fillStyle='#A09085';ctx.font='24px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+  ctx.fillText(week.label,W/2,192);
+  ctx.fillStyle='#BCAAA4';ctx.font='22px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+  ctx.fillText('📷 照片需在Supabase Storage中配置CORS才能展示',W/2,320);
+  ctx.fillText('请在Supabase Storage Settings中允许跨域访问',W/2,350);
+  ctx.fillStyle='#BCAAA4';ctx.font='18px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+  ctx.fillText('💕 每一天都是珍贵的礼物',W/2,480);
+  return ctx.canvas.toDataURL('image/png');
 }
 
 async function showShareCard(){
@@ -2657,17 +2697,21 @@ async function showShareCard(){
   // Show loading
   toast('正在生成卡片...','ok');
 
-  // Preload up to 4 photos
+  // Preload up to 4 photos (crossOrigin to avoid canvas taint)
   var loadedImgs=[];
   var maxPhotos=Math.min(weekPhotos.length,4);
   for(var i=0;i<maxPhotos;i++){
     var purl=weekPhotos[i].thumbnailDataUrl||weekPhotos[i].dataUrl;
     if(purl){
       try{
-        var img=await new Promise(function(resolve,reject){
+        var img=await new Promise(function(resolve){
           var im=new Image();
-          im.onload=function(){resolve(im);};
-          im.onerror=function(){resolve(null);};
+          // Only set crossOrigin for external URLs, not data: URLs
+          if(purl.indexOf('http')===0){im.crossOrigin='anonymous';}
+          var done=false;
+          im.onload=function(){if(!done){done=true;resolve(im);}};
+          im.onerror=function(){if(!done){done=true;resolve(null);}};
+          setTimeout(function(){if(!done){done=true;resolve(null);}},5000);
           im.src=purl;
         });
         if(img)loadedImgs.push(img);
