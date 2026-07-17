@@ -1,5 +1,5 @@
 // Service Worker for 小桃酥的成长记录 PWA
-const CACHE_NAME = 'xiaotaosu-v2';
+const CACHE_NAME = 'xiaotaosu-v3';
 const ASSETS = [
   '/xiaotaosu/',
   '/xiaotaosu/index.html',

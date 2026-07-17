@@ -478,11 +478,17 @@ input:focus,textarea:focus,select:focus{outline:none}
 // ============================================================
 
 // ---- Service Worker (PWA) ----
+// Force-clear ALL old service workers to fix caching issues
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/xiaotaosu/sw.js',{scope:'/xiaotaosu/'}).then(function(reg){
-    console.log('SW registered:', reg.scope);
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    regs.forEach(function(reg){reg.unregister();});
+    console.log('Cleared '+regs.length+' old service worker(s)');
+    // Re-register with latest version
+    return navigator.serviceWorker.register('/xiaotaosu/sw.js',{scope:'/xiaotaosu/'});
+  }).then(function(reg){
+    if(reg)console.log('SW re-registered:',reg.scope);
   }).catch(function(err){
-    console.warn('SW registration failed:', err);
+    console.warn('SW error:',err);
   });
 }
 
