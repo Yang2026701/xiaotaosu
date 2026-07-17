@@ -1545,7 +1545,7 @@ function drawSVGChart(records,metric,color){
   svg+='<rect x="'+(pl+6)+'" y="'+(pt+2)+'" width="10" height="10" rx="2" fill="'+color+'"/>';
   svg+='<text x="'+(pl+20)+'" y="'+(pt+10)+'" font-size="10" fill="#8D6E63">小桃酥</text>';
   svg+='<line x1="'+(pl+70)+'" y1="'+(pt+7)+'" x2="'+(pl+100)+'" y2="'+(pt+7)+'" stroke="#D7CCC8" stroke-width="1.5" stroke-dasharray="4,3"/>';
-  svg+='<text x="'+(pl+104)+'" y="'+(pt+10)+'" font-size="10" fill="#BCAAA4">P50</text>';
+  svg+='<text x="'+(pl+104)+'" y="'+(pt+10)+'" font-size="10" fill="#BCAAA4">同龄均值</text>';
   
   svg+='</svg>';
   return'<div style="text-align:center">'+svg+'</div>';
@@ -1584,18 +1584,18 @@ function getPercentile(records,metric,value){
   else if(metric==='weight'){p3=row[6];p50=row[8];p97=row[10];}
   else return null;
   
-  if(value<p3)return'低于P3';
-  if(value<=p3+(p50-p3)*0.4)return'P3~P15';
-  if(value<=p3+(p50-p3)*0.8)return'P15~P50';
-  if(value<=p50+(p97-p50)*0.3)return'P50附近';
-  if(value<=p50+(p97-p50)*0.7)return'P50~P85';
-  if(value<=p97)return'P85~P97';
-  return'高于P97';
+  if(value<p3)return'偏小';
+  if(value<=p3+(p50-p3)*0.4)return'偏小';
+  if(value<=p3+(p50-p3)*0.8)return'中等偏小';
+  if(value<=p50+(p97-p50)*0.3)return'标准';
+  if(value<=p50+(p97-p50)*0.7)return'中等偏大';
+  if(value<=p97)return'偏大';
+  return'偏大';
 }
 
 function getPctColor(pct){
   if(!pct)return'#BCAAA4';
-  if(pct.indexOf('P15~P50')>=0||pct.indexOf('P50附近')>=0||pct.indexOf('P50~P85')>=0)return'#81C784';
+  if(pct.indexOf('标准')>=0||pct.indexOf('中等')>=0)return'#81C784';
   if(pct.indexOf('低于')>=0||pct.indexOf('高于')>=0)return'#EF9A9A';
   return'#FFD54F';
 }
@@ -1612,8 +1612,8 @@ function deltaS(latest,prev,metric){
 function growAssessmentCard(htPct,wtPct,count){
   if(count<1)return'';
   var lines=[];
-  var htOK=htPct&&(htPct.indexOf('P15')>=0||htPct.indexOf('P50')>=0);
-  var wtOK=wtPct&&(wtPct.indexOf('P15')>=0||wtPct.indexOf('P50')>=0);
+  var htOK=htPct&&(htPct.indexOf('中等')>=0||htPct.indexOf('标准')>=0);
+  var wtOK=wtPct&&(wtPct.indexOf('中等')>=0||wtPct.indexOf('标准')>=0);
   if(htOK&&wtOK)lines.push('✅ 身高体重均在正常范围，生长状态良好');
   else if(!htOK&&wtOK)lines.push('⚠️ 身高需关注，体重正常');
   else if(htOK&&!wtOK)lines.push('⚠️ 体重需关注，身高正常');
@@ -2042,7 +2042,7 @@ function renderWeekly(){
       h+='<div class="wr-stat-row">';
       if(lastG.height)h+='<div class="wr-stat-badge"><div class="wr-sv">'+lastG.height+'cm</div><div class="wr-sl">身高'+(hDelta?(hDelta>0?' ↑+'+hDelta:' ↓'+hDelta):'')+'</div></div>';
       if(lastG.weight)h+='<div class="wr-stat-badge"><div class="wr-sv">'+lastG.weight+'kg</div><div class="wr-sl">体重'+(wDelta?(wDelta>0?' ↑+'+wDelta:' ↓'+wDelta):'')+'</div></div>';
-      if(whoRow)h+='<div class="wr-stat-badge accent"><div class="wr-sv">P50:'+whoRow[3]+'cm</div><div class="wr-sl">同龄身高参考</div></div>';
+      if(whoRow)h+='<div class="wr-stat-badge accent"><div class="wr-sv">'+whoRow[3]+'cm</div><div class="wr-sl">同龄宝宝平均身高</div></div>';
       h+='</div>';
     } else {
       h+='<div style="font-size:.8rem;color:#BCAAA4;margin-bottom:12px">本周无生长记录</div>';
