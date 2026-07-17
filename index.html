@@ -1505,9 +1505,17 @@ function stile(icon,label,value,unit,ds,pct){var pctHtml='';if(pct&&value!=='--'
 function deltaS(c,p,u){if(c==null||p==null)return'';const d=c-p;return(d>=0?'+':'')+d.toFixed(1)+u+' 较上次';}
 
 function renderCharts(records,birth){
+  if(typeof Chart==='undefined'){
+    console.log('Chart.js loading, waiting...');
+    var retries=0,waitForChart=setInterval(function(){
+      retries++;
+      if(typeof Chart!=='undefined'){clearInterval(waitForChart);console.log('Chart.js ready after '+retries+' retries');renderCharts(records,birth);}
+      else if(retries>50){clearInterval(waitForChart);console.log('Chart.js timeout');}
+    },200);
+    return;
+  }
   try{if(heightChart){heightChart.destroy();heightChart=null;}}catch(e){}
   try{if(weightChart){weightChart.destroy();weightChart=null;}}catch(e){}
-  if(typeof Chart==='undefined')return;
   var maxAge=Math.max(730,0);records.forEach(function(r){if(r.ageInDays>maxAge)maxAge=r.ageInDays;});
 
   var hData=[];records.forEach(function(r){if(r.height!=null)hData.push({x:r.ageInDays,y:r.height});});
