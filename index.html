@@ -97,6 +97,8 @@ input:focus,textarea:focus,select:focus{outline:none}
 .bar-sub{font-size:.7rem;color:#A09085}
 .btn-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.25rem}
 .btn-icon:active{background:#FFEDE6}
+.bar-weekly-btn{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:transform .15s}
+.bar-weekly-btn:active{transform:scale(.9);background:#FFF0EB}
 /* Content */
 #content{flex:1;padding:16px}
 .page{animation:pgIn .2s ease}
@@ -602,6 +604,7 @@ input:focus,textarea:focus,select:focus{outline:none}
         <p class="bar-sub" id="bage">--</p>
       </div>
     </div>
+    <button class="bar-weekly-btn" id="bweekly">📰</button>
     <button class="btn-icon" id="bsettings">⚙️</button>
   </header>
 
@@ -1048,6 +1051,7 @@ function setupMainApp() {
   });
 
   $('#bsettings').addEventListener('click', () => { location.hash = 'settings'; });
+  $('#bweekly').addEventListener('click', () => { location.hash = 'weekly'; });
   $('#fab').addEventListener('click', handleFab);
 
   // Auto-start music on first app entry
@@ -1080,10 +1084,6 @@ function navigate(tab) {
   if(activeTab!==tab&&activeTab==='growth'){if(heightChart)heightChart.destroy();if(weightChart)weightChart.destroy();}
   activeTab=tab;
   renderPage();
-  // Inject weekly banner on non-special pages
-  if(tab!=='weekly'&&tab!=='settings'){
-    if(pg){var banner=renderWeeklyBanner();pg.innerHTML=banner+pg.innerHTML;}
-  }
   $('#content').scrollTop=0;
 }
 
