@@ -1077,7 +1077,7 @@ function navigate(tab) {
   $$('.page').forEach(p=>p.hidden=true);
   const pg=$('#page-'+tab); if(pg)pg.hidden=false;
   $$('#tabs .tab').forEach(b=>{b.classList.toggle('active',b.dataset.tab===tab);});
-  var rt=byRoute(tab); $('#fab').classList.toggle('hidden', rt&&rt.hideFab);
+  var rt=byRoute(tab); $('#fab').classList.toggle('hidden', !!(rt&&rt.hideFab));
   if(fabMenuOpen)closeFabMenu();
   if(activeTab!==tab&&activeTab==='growth'){if(heightChart)heightChart.destroy();if(weightChart)weightChart.destroy();}
   activeTab=tab;
