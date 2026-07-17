@@ -2440,9 +2440,9 @@ function roundRect(ctx,x,y,w,h,r){
   ctx.closePath();
 }
 
-function drawShareCard(week,weekGrowth,weekLogs,weekMilestones,weekDiary,weekPhotos){
+function drawShareCard(week,weekGrowth,weekLogs,weekMilestones,weekDiary,weekPhotos,loadedImgs){
   var dpr=window.devicePixelRatio||1;
-  var W=750,H=1100;
+  var W=750,H=1200;
   var c=document.createElement('canvas');
   c.width=W*dpr;c.height=H*dpr;
   c.style.width=W+'px';c.style.height=H+'px';
@@ -2562,35 +2562,65 @@ function drawShareCard(week,weekGrowth,weekLogs,weekMilestones,weekDiary,weekPho
     ctx.fillText('本周暂无新里程碑，继续加油~',W/2,y+140);
   }
 
-  // === SECTION 3: Diary snippet ===
+  // === SECTION 3: Photos + Diary ===
   y=682;
-  var diaryY=y;
-  if(weekDiary.length>0){
-    var dy=weekDiary[0];
-    var snippet=dy.content||'';
-    if(snippet.length>80)snippet=snippet.substring(0,80)+'...';
-    roundRect(ctx,32,y,W-64,140,20);
+  var hasPhotos=loadedImgs&&loadedImgs.length>0;
+  var hasDiary=weekDiary.length>0;
+  var sectionH=hasPhotos?280:140;
+  if(!hasPhotos&&!hasDiary)sectionH=10;
+
+  if(hasPhotos||hasDiary){
+    roundRect(ctx,32,y,W-64,sectionH,20);
     ctx.fillStyle='#FFFFFF';ctx.fill();ctx.strokeStyle='rgba(240,232,224,.6)';ctx.stroke();
 
     ctx.fillStyle='#5D4037';ctx.font='bold 26px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
     ctx.textAlign='left';
-    ctx.fillText('📝 本周日记',60,y+42);
+    ctx.fillText('📷 本周瞬间 & 📝 日记',60,y+42);
 
-    ctx.fillStyle='#8D6E63';ctx.font='italic 20px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
-    ctx.textAlign='center';
-    var lines=wrapText(ctx,'"'+snippet+'"',W-140);
-    for(var i=0;i<Math.min(lines.length,3);i++){
-      ctx.fillText(lines[i],W/2,y+82+i*30);
+    if(hasPhotos){
+      // Draw photo polaroids
+      var pw=110,ph=110,pgap=16;
+      var totalW=Math.min(loadedImgs.length,4)*(pw+pgap)-pgap;
+      var startX=(W-totalW)/2;
+      var photoY=y+60;
+      for(var pi=0;pi<Math.min(loadedImgs.length,4);pi++){
+        var px=startX+pi*(pw+pgap);
+        // White polaroid frame
+        ctx.fillStyle='#FFFFFF';
+        ctx.shadowColor='rgba(0,0,0,.1)';ctx.shadowBlur=8;ctx.shadowOffsetY=3;
+        roundRect(ctx,px-4,photoY-4,pw+8,ph+24,6);
+        ctx.fill();
+        ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+        // Photo
+        try{ctx.drawImage(loadedImgs[pi],px,photoY,pw,ph);}catch(e){}
+        // Date caption
+        var pday=U.fmtShort(weekPhotos[pi]?weekPhotos[pi].date:'');
+        ctx.fillStyle='#A09085';ctx.font='14px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+        ctx.textAlign='center';
+        ctx.fillText(pday,px+pw/2,photoY+ph+18);
+      }
+    }
+
+    if(hasDiary){
+      var dy=weekDiary[0];
+      var snippet=dy.content||'';
+      if(snippet.length>60)snippet=snippet.substring(0,60)+'...';
+      var diaryTextY=hasPhotos?y+200:y+72;
+      ctx.fillStyle='#8D6E63';ctx.font='italic 20px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+      ctx.textAlign='center';
+      var lines=wrapText(ctx,'"'+snippet+'"',W-140);
+      for(var i=0;i<Math.min(lines.length,2);i++){
+        ctx.fillText(lines[i],W/2,diaryTextY+i*30);
+      }
     }
   }
 
-  // === SECTION 4: AI summary (only if has data) ===
+  // === Bottom area ===
   var hasData=weekGrowth.length>0||weekLogs.length>0||weekMilestones.length>0||weekDiary.length>0;
-  // AI section rendered on the card if there's content
-  var bottomY=diaryY+(weekDiary.length>0?160:10);
+  var bottomY=y+(hasPhotos||hasDiary?sectionH+20:20);
 
   // Bottom message
-  var footerY=Math.max(bottomY+30,910);
+  var footerY=Math.max(bottomY+30,980);
   ctx.fillStyle='#BCAAA4';ctx.font='20px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
   ctx.textAlign='center';
   ctx.fillText('💕 每一天都是珍贵的礼物',W/2,footerY);
@@ -2611,7 +2641,7 @@ function drawShareCard(week,weekGrowth,weekLogs,weekMilestones,weekDiary,weekPho
   return c.toDataURL('image/png');
 }
 
-function showShareCard(){
+async function showShareCard(){
   try{
   var week=getWeekRange(weeklyWeekStart);
   var birth=appData.settings.birthDate;
@@ -2627,11 +2657,29 @@ function showShareCard(){
   // Show loading
   toast('正在生成卡片...','ok');
 
+  // Preload up to 4 photos
+  var loadedImgs=[];
+  var maxPhotos=Math.min(weekPhotos.length,4);
+  for(var i=0;i<maxPhotos;i++){
+    var purl=weekPhotos[i].thumbnailDataUrl||weekPhotos[i].dataUrl;
+    if(purl){
+      try{
+        var img=await new Promise(function(resolve,reject){
+          var im=new Image();
+          im.onload=function(){resolve(im);};
+          im.onerror=function(){resolve(null);};
+          im.src=purl;
+        });
+        if(img)loadedImgs.push(img);
+      }catch(e){}
+    }
+  }
+
   setTimeout(function(){
     try{
-      var dataUrl=drawShareCard(week,weekGrowth,weekLogs,weekMilestones,weekDiary,weekPhotos);
-      var img=document.getElementById('sm-img');
-      if(img)img.src=dataUrl;
+      var dataUrl=drawShareCard(week,weekGrowth,weekLogs,weekMilestones,weekDiary,weekPhotos,loadedImgs);
+      var simg=document.getElementById('sm-img');
+      if(simg)simg.src=dataUrl;
       var ov=document.getElementById('sm-overlay');
       if(ov)ov.classList.remove('hidden');
 
@@ -2643,7 +2691,7 @@ function showShareCard(){
         a.click();
       };
     }catch(e){toast('生成失败: '+e.message,'err');}
-  },200);
+  },100);
   }catch(e){toast('生成失败: '+e.message,'err');}
 }
 
