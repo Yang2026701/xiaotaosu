@@ -782,8 +782,8 @@ const API = {
   addGrowth(g) { return this._fetch('POST','/rest/v1/growth_records',{id:g.id,record_date:g.date,age_days:g.ageInDays,height:g.height,weight:g.weight,head_circumference:g.headCircumference,notes:g.notes}); },
   deleteGrowth(id) { return this._fetch('DELETE','/rest/v1/growth_records?id=eq.'+encodeURIComponent(id)); },
   getDiary() { return this._fetch('GET','/rest/v1/diary_entries?select=*&order=entry_date.desc').then(d=>(d||[]).map(r=>({id:r.id,date:r.entry_date,title:r.title,content:r.content,mood:r.mood,weather:r.weather||'',photoIds:r.photo_ids||[],tags:r.tags||[]}))); },
-  addDiary(e) { return this._fetch('POST','/rest/v1/diary_entries',{id:e.id,entry_date:e.date,title:e.title,content:e.content,mood:e.mood,weather:e.weather||'',photo_ids:e.photoIds,tags:e.tags}); },
-  updateDiary(id,u) { return this._fetch('PATCH','/rest/v1/diary_entries?id=eq.'+encodeURIComponent(id),{entry_date:u.date,title:u.title,content:u.content,mood:u.mood,weather:u.weather||'',tags:u.tags,photo_ids:u.photoIds}); },
+  addDiary(e) { return this._fetch('POST','/rest/v1/diary_entries',{id:e.id,entry_date:e.date,title:e.title,content:e.content,mood:e.mood,weather:e.weather||null,photo_ids:e.photoIds,tags:e.tags}); },
+  updateDiary(id,u) { return this._fetch('PATCH','/rest/v1/diary_entries?id=eq.'+encodeURIComponent(id),{entry_date:u.date,title:u.title,content:u.content,mood:u.mood,weather:u.weather||null,tags:u.tags,photo_ids:u.photoIds}); },
   deleteDiary(id) { return this._fetch('DELETE','/rest/v1/diary_entries?id=eq.'+encodeURIComponent(id)); },
   getHealth() { return this._fetch('GET','/rest/v1/health_records?select=*&order=record_date.asc').then(d=>(d||[]).map(r=>({id:r.id,recordType:r.record_type,title:r.title,date:r.record_date,ageDays:r.age_days,notes:r.notes,isCompleted:r.is_completed,filePath:r.file_path||'',fileName:r.file_name||''}))); },
   addHealth(h) { return this._fetch('POST','/rest/v1/health_records',{id:h.id,record_type:h.recordType,title:h.title,record_date:h.date,age_days:h.ageDays,notes:h.notes,is_completed:h.isCompleted,file_path:h.filePath||'',file_name:h.fileName||''}); },
@@ -2005,7 +2005,7 @@ function showDiaryForm(existing,tplName,tplTitle,tplContent){
     if(!date){toast('请选择日期','err');return false;}
     if(!title){toast('请输入标题','err');return false;}
     var tags=tagsStr?tagsStr.split(/[,，]/).map(function(t){return t.trim();}).filter(Boolean):[];
-    var data={date:date,title:title,content:content,mood:selMood,weather:selWeather,tags:tags,photoIds:existing?existing.photoIds:[]};
+    var data={date:date,title:title,content:content,mood:selMood,weather:selWeather||null,tags:tags,photoIds:existing?existing.photoIds:[]};
     try{
       if(isEdit){await API.updateDiary(existing.id,data);toast('已更新','ok');}
       else{data.id=U.genId('d');await API.addDiary(data);toast('日记已保存','ok');celebrate();}
