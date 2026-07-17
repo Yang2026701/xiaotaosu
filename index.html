@@ -1691,6 +1691,7 @@ const CHECKUP_SCHEDULE = [
 //  DAILY LOG PAGE — 喂养·睡眠·换尿布
 // ============================================================
 function renderDaily(){
+  try{
   var logs=(appData.dailyLogs||[]).slice();
   var today=U.today();
   var todayLogs=logs.filter(function(l){return l.date===today;});
@@ -1754,11 +1755,13 @@ function renderDaily(){
   }
 
   $('#page-daily').innerHTML=html;
+  $$('.dl-item-del').forEach(function(el){el.addEventListener('click',function(e){e.stopPropagation();deleteDailyLog(el.dataset.dlid);});});
+  }catch(e){console.error('renderDaily error:',e);$('#page-daily').innerHTML=emptyState('📋','加载失败','请刷新重试: '+e.message);}
 }
 
 function showDailyForm(type){
   var now=new Date();
-  var timeStr=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  var timeStr=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
   var today=U.today();
   var labels={feed:'🍼 喂奶',sleep:'😴 睡眠',diaper:'💩 换尿布',other:'📝 其他'};
   var html='<div class="fg"><label class="fl">日期</label><input type="date" class="fi" id="dl-date" value="'+today+'"></div>'+
