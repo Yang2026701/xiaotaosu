@@ -1696,43 +1696,37 @@ function renderDaily(){
   var today=U.today();
   var todayLogs=logs.filter(function(l){return l.date===today;});
 
-  // Today stats
   var feeds=todayLogs.filter(function(l){return l.logType==='feed';});
   var sleeps=todayLogs.filter(function(l){return l.logType==='sleep';});
   var diapers=todayLogs.filter(function(l){return l.logType==='diaper';});
   var feedTotal=feeds.reduce(function(s,l){return s+(l.valueNum||0);},0);
 
-  var html='';
-  // Quick-add buttons
-  html+='<div class="dl-grid">';
-  html+='<button class="dl-btn dl-bf" onclick="showDailyForm(\'feed\')"><span class="dl-btn-icon">🍼</span>喂奶</button>';
-  html+='<button class="dl-btn dl-sl" onclick="showDailyForm(\'sleep\')"><span class="dl-btn-icon">😴</span>睡眠</button>';
-  html+='<button class="dl-btn dl-dp" onclick="showDailyForm(\'diaper\')"><span class="dl-btn-icon">💩</span>换尿布</button>';
-  html+='<button class="dl-btn dl-other" onclick="showDailyForm(\'other\')"><span class="dl-btn-icon">📝</span>其他</button>';
-  html+='</div>';
+  var html='<div class=\"dl-grid\">'+
+    '<button class=\"dl-btn dl-bf\" id=\"dlbtn-feed\"><span class=\"dl-btn-icon\">🍼</span>喂奶</button>'+
+    '<button class=\"dl-btn dl-sl\" id=\"dlbtn-sleep\"><span class=\"dl-btn-icon\">😴</span>睡眠</button>'+
+    '<button class=\"dl-btn dl-dp\" id=\"dlbtn-diaper\"><span class=\"dl-btn-icon\">💩</span>换尿布</button>'+
+    '<button class=\"dl-btn dl-other\" id=\"dlbtn-other\"><span class=\"dl-btn-icon\">📝</span>其他</button></div>';
 
-  // Today summary
-  html+='<div class="dl-today"><h3>📊 今日小结 ('+U.fmtDate(today)+')</h3>';
-  html+='<div class="dl-stat">';
-  html+='<div class="dl-stat-item"><div class="dl-stat-num">'+feeds.length+'次</div><div class="dl-stat-lbl">🍼 喂奶</div><div style="font-size:.7rem;color:#FF8C69">共'+feedTotal+'ml</div></div>';
-  html+='<div class="dl-stat-item"><div class="dl-stat-num">'+sleeps.length+'次</div><div class="dl-stat-lbl">😴 睡眠</div></div>';
-  html+='<div class="dl-stat-item"><div class="dl-stat-num">'+diapers.length+'次</div><div class="dl-stat-lbl">💩 换尿布</div></div>';
+  html+='<div class=\"dl-today\"><h3>📊 今日小结 ('+U.fmtDate(today)+')</h3>';
+  html+='<div class=\"dl-stat\">';
+  html+='<div class=\"dl-stat-item\"><div class=\"dl-stat-num\">'+feeds.length+'次</div><div class=\"dl-stat-lbl\">🍼 喂奶</div><div style=\"font-size:.7rem;color:#FF8C69\">共'+feedTotal+'ml</div></div>';
+  html+='<div class=\"dl-stat-item\"><div class=\"dl-stat-num\">'+sleeps.length+'次</div><div class=\"dl-stat-lbl\">😴 睡眠</div></div>';
+  html+='<div class=\"dl-stat-item\"><div class=\"dl-stat-num\">'+diapers.length+'次</div><div class=\"dl-stat-lbl\">💩 换尿布</div></div>';
   html+='</div></div>';
 
-  // Today's logs
   if(todayLogs.length>0){
-    html+='<div style="font-size:.85rem;color:#BCAAA4;margin-bottom:8px">今天记录</div>';
+    html+='<div style=\"font-size:.85rem;color:#BCAAA4;margin-bottom:8px\">今天记录</div>';
     var typeLabels={feed:'🍼',sleep:'😴',diaper:'💩',other:'📝'};
     todayLogs.forEach(function(l){
       var detail='';
-      if(l.logType==='feed')detail=(l.valueNum?l.valueNum+'ml ':'')+(l.valueText||'');
-      else if(l.logType==='sleep')detail=l.valueText||'';
-      else if(l.logType==='diaper')detail=l.valueText||'';
+      if(l.logType=='feed')detail=(l.valueNum?l.valueNum+'ml ':'')+(l.valueText||'');
+      else if(l.logType=='sleep')detail=l.valueText||'';
+      else if(l.logType=='diaper')detail=l.valueText||'';
       else detail=l.notes||'';
-      html+='<div class="dl-item"><span class="dl-item-icon">'+ (typeLabels[l.logType]||'📝')+'</span><span class="dl-item-info">'+U.esc(detail||'—')+'</span><span class="dl-item-time">'+ (l.time?l.time.substring(0,5):'')+'</span><span class="dl-item-del" onclick="deleteDailyLog(\''+l.id+'\')">×</span></div>';
+      html+='<div class=\"dl-item\" data-dlid=\"'+l.id+'\"><span class=\"dl-item-icon\">'+ (typeLabels[l.logType]||'📝')+'</span><span class=\"dl-item-info\">'+U.esc(detail||'—')+'</span><span class=\"dl-item-time\">'+ (l.time?l.time.substring(0,5):'')+'</span><span class=\"dl-item-del\">×</span></div>';
     });
   }else{
-    html+='<div class="empty-state" style="padding:24px 0"><div class="empty-icon">📋</div><div class="empty-title">今天还没有记录</div><div class="empty-desc">点击上方按钮快速记录</div></div>';
+    html+='<div class=\"empty-state\" style=\"padding:24px 0\"><div class=\"empty-icon\">📋</div><div class=\"empty-title\">今天还没有记录</div><div class=\"empty-desc\">点击上方按钮快速记录</div></div>';
   }
 
   // Recent days
@@ -1745,18 +1739,21 @@ function renderDaily(){
     });
     var days=Object.keys(daysMap).sort().reverse().slice(0,5);
     days.forEach(function(d){
-      var dLogs=daysMap[d];
-      var dFeeds=dLogs.filter(function(l){return l.logType==='feed';}).length;
-      var dSleeps=dLogs.filter(function(l){return l.logType==='sleep';}).length;
-      var dDiapers=dLogs.filter(function(l){return l.logType==='diaper';}).length;
-      html+='<div style="font-size:.85rem;color:#BCAAA4;margin:16px 0 6px">'+U.fmtDate(d)+'</div>';
-      html+='<div style="display:flex;gap:12px;font-size:.8rem;color:#8D6E63;margin-bottom:8px">🍼'+dFeeds+'次 😴'+dSleeps+'次 💩'+dDiapers+'次</div>';
+      var dLogs=daysMap[d]||[];
+      var dFeeds=dLogs.filter(function(l){return l.logType=='feed';}).length;
+      var dSleeps=dLogs.filter(function(l){return l.logType=='sleep';}).length;
+      var dDiapers=dLogs.filter(function(l){return l.logType=='diaper';}).length;
+      html+='<div style=\"font-size:.85rem;color:#BCAAA4;margin:16px 0 6px\">'+U.fmtDate(d)+'</div>';
+      html+='<div style=\"display:flex;gap:12px;font-size:.8rem;color:#8D6E63;margin-bottom:8px\">🍼'+dFeeds+'次 😴'+dSleeps+'次 💩'+dDiapers+'次</div>';
     });
   }
 
   $('#page-daily').innerHTML=html;
-  $$('.dl-item-del').forEach(function(el){el.addEventListener('click',function(e){e.stopPropagation();deleteDailyLog(el.dataset.dlid);});});
-  }catch(e){console.error('renderDaily error:',e);$('#page-daily').innerHTML=emptyState('📋','加载失败','请刷新重试: '+e.message);}
+
+  // Bind event listeners (no inline onclick)
+  ['feed','sleep','diaper','other'].forEach(function(t){var b=$('#dlbtn-'+t);if(b){b.addEventListener('click',function(){showDailyForm(t);});}});
+  $$('.dl-item-del').forEach(function(el){el.addEventListener('click',function(e){e.stopPropagation();var id=el.parentElement.dataset.dlid;if(id)deleteDailyLog(id);});});
+  }catch(e){$('#page-daily').innerHTML=emptyState('📋','加载失败','请刷新重试: '+e.message);}
 }
 
 function showDailyForm(type){
@@ -1764,33 +1761,36 @@ function showDailyForm(type){
   var timeStr=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
   var today=U.today();
   var labels={feed:'🍼 喂奶',sleep:'😴 睡眠',diaper:'💩 换尿布',other:'📝 其他'};
+  var selectedText='',selectedNum=null;
   var html='<div class="fg"><label class="fl">日期</label><input type="date" class="fi" id="dl-date" value="'+today+'"></div>'+
     '<div class="fg"><label class="fl">时间</label><input type="time" class="fi" id="dl-time" value="'+timeStr+'"></div>';
 
-  if(type==='feed'){
-    html+='<div class="fg"><label class="fl">奶量 (ml)</label><input type="number" class="fi" id="dl-val" placeholder="例如: 80" min="1" max="500"></div>'+
-      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'+['30ml','60ml','90ml','120ml','150ml','180ml'].map(function(v){return'<span class="dl-chip" onclick="document.getElementById(\'dl-val\').value='+v+'">'+v+'</span>';}).join('')+'</div>'+
-      '<div class="fg"><label class="fl">喂养方式</label><div style="display:flex;gap:6px">'+['母乳亲喂','母乳瓶喂','配方奶'].map(function(v){return'<span class="dl-chip" onclick="document.getElementById(\'dl-type\').textContent=\''+v+'\'">'+v+'</span>';}).join('')+' <span id="dl-type" style="font-size:.75rem;color:#FF8C69;align-self:center"></span></div></div>';
-  }else if(type==='sleep'){
-    html+='<div class="fg"><label class="fl">睡眠时长</label><div style="display:flex;gap:6px;flex-wrap:wrap">'+['15分钟','30分钟','45分钟','1小时','1.5小时','2小时','3小时'].map(function(v){return'<span class="dl-chip" onclick="document.getElementById(\'dl-vt\').value=\''+v+'\'">'+v+'</span>';}).join('')+'</div><input type="text" class="fi" id="dl-vt" placeholder="或手动输入，如: 小觉40分钟" style="margin-top:6px"></div>';
-  }else if(type==='diaper'){
-    html+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'+['💩 便便','💧 小便','💩💧 都有','🟡 稀便','🟢 绿便'].map(function(v){return'<span class="dl-chip" onclick="document.getElementById(\'dl-vt\').value=\''+v+'\'">'+v+'</span>';}).join('')+'</div><input type="hidden" id="dl-vt">';
+  if(type=='feed'){
+    html+='<div class="fg"><label class="fl">奶量 (ml)</label><input type="number" class="fi" id="dl-val" placeholder="80" min="1" max="500"></div>'+
+      '<div class="dl-quick">'+['30ml','60ml','90ml','120ml','150ml'].map(function(v){var n=parseInt(v);return'<span class="dl-chip" data-n="'+n+'">'+v+'</span>';}).join('')+'</div>'+
+      '<div class="fg"><label class="fl">喂养方式</label><div class="dl-quick" id="dl-feed-type">'+['母乳亲喂','母乳瓶喂','配方奶'].map(function(v){return'<span class="dl-chip">'+v+'</span>';}).join('')+'</div></div>';
+  }else if(type=='sleep'){
+    html+='<div class="fg"><label class="fl">睡眠时长</label><div class="dl-quick">'+['15分钟','30分钟','45分钟','1小时','1.5小时','2小时'].map(function(v){return'<span class="dl-chip">'+v+'</span>';}).join('')+'</div><input type="text" class="fi" id="dl-vt" placeholder="或手动输入" style="margin-top:6px"></div>';
+  }else if(type=='diaper'){
+    html+='<div class="dl-quick" style="margin-bottom:12px">'+['💩 便便','💧 小便','💩💧 都有','🟡 稀便','🟢 绿便'].map(function(v){return'<span class="dl-chip">'+v+'</span>';}).join('')+'</div><input type="hidden" id="dl-vt">';
   }else{
-    html+='<div class="fg"><label class="fl">内容</label><input type="text" class="fi" id="dl-vt" placeholder="例如: 体重测量、吃药..."></div><div class="fg"><label class="fl">备注</label><textarea class="ft" id="dl-notes" rows="2" placeholder="补充说明..."></textarea></div>';
+    html+='<div class="fg"><label class="fl">内容</label><input type="text" class="fi" id="dl-vt" placeholder="体重、吃药..."></div><div class="fg"><label class="fl">备注</label><textarea class="ft" id="dl-notes" rows="2"></textarea></div>';
   }
 
   showModal(labels[type],html,async function(){
-    var date=$('#dl-date').value;
-    var time=$('#dl-time').value;
-    var valNum=parseFloat($('#dl-val')?.value)||null;
-    var valText=$('#dl-vt')?.value?.trim()||$('#dl-type')?.textContent?.trim()||'';
+    var date=$('#dl-date').value,time=$('#dl-time').value;
+    var valNum=parseFloat($('#dl-val')?.value)||selectedNum||null;
+    var valText=$('#dl-vt')?.value?.trim()||selectedText||'';
     var notes=$('#dl-notes')?.value?.trim()||'';
     if(!date){toast('请选择日期','err');return false;}
     try{await API.addDailyLog({id:U.genId('dl'),logType:type,date:date,time:time,valueNum:valNum,valueText:valText,notes:notes});toast('已记录','ok');celebrate();return true;}
     catch(e){toast('保存失败: '+e.message,'err');return false;}
   },function(){
-    // Bind chip clicks
-    $$('.dl-chip').forEach(function(c){c.addEventListener('click',function(){$$('.dl-chip').forEach(function(x){x.classList.remove('on');});c.classList.add('on');});});
+    $$('.dl-chip').forEach(function(c){c.addEventListener('click',function(){
+      $$('.dl-chip').forEach(function(x){x.classList.remove('on');});c.classList.add('on');
+      if(c.dataset.n){selectedNum=parseInt(c.dataset.n);$('#dl-val').value=c.dataset.n;}
+      else{selectedText=c.textContent.trim();$('#dl-vt').value=c.textContent.trim();}
+    });});
   });
 }
 
