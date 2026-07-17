@@ -471,6 +471,7 @@ input:focus,textarea:focus,select:focus{outline:none}
   <input type="file" id="video-input" accept="video/*" hidden>
 </div>
 
+<script src="/xiaotaosu/chart.min.js"></script>
 <script>
 // ============================================================
 //  COMPLETE APP
@@ -2428,38 +2429,10 @@ function getUpcomingMilestones(birthDate) {
 // ============================================================
 function emptyState(icon,title,desc){return'<div class="empty"><div class="empty-icon">'+icon+'</div><div class="empty-title">'+title+'</div><div class="empty-desc">'+desc+'</div></div>';}
 
-// ---- Chart.js dynamic loader (multi-CDN fallback) ----
-var _chartJSLoaded=false,_chartJSLoading=false,_chartCDNs=[
-  'https://registry.npmmirror.com/chart.js/4.4.0/files/dist/chart.umd.min.js',
-  'https://unpkg.com/chart.js@4.4.0/dist/chart.umd.min.js',
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'
-];
-function tryLoadCDN(i){
-  if(i>=_chartCDNs.length){_chartJSLoading=false;return;}var s=document.createElement('script');
-  s.src=_chartCDNs[i];s.onload=function(){_chartJSLoaded=true;_chartJSLoading=false;};
-  s.onerror=function(){tryLoadCDN(i+1);};document.head.appendChild(s);
-}
-function loadChartJS(){
-  if(_chartJSLoaded)return Promise.resolve();
-  if(_chartJSLoading)return new Promise(function(ok){var t=setInterval(function(){if(_chartJSLoaded){clearInterval(t);ok();}},100);});
-  _chartJSLoading=true;tryLoadCDN(0);
-  return new Promise(function(ok,no){
-    var t=setInterval(function(){
-      if(_chartJSLoaded){clearInterval(t);ok();}
-    },100);
-    setTimeout(function(){if(!_chartJSLoaded){clearInterval(t);_chartJSLoading=false;no(new Error('所有CDN均加载失败'));}},6000);
-  });
-}
+// ---- Chart.js loaded from local file (no CDN dependency) ----
+var _chartJSLoaded=typeof Chart!=='undefined';
 
-// Wrap renderGrowth to preload Chart.js before charts render
-var _origRenderCharts=renderCharts;
-renderCharts=function(records,birth){
-  loadChartJS().then(function(){
-    _origRenderCharts(records,birth);
-  }).catch(function(){
-    var pg=$('#page-growth');if(pg)pg.insertAdjacentHTML('beforeend','<p style=\"text-align:center;color:#BCAAA4;margin-top:16px\">📊 图表加载失败，请检查网络（数据记录正常）</p>');
-  });
-};
+// Chart.js loaded locally — no CDN needed
 </script>
 </body>
 </html>
