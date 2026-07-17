@@ -772,8 +772,8 @@ async function enterApp(config) {
 
     // Load data
     try {
-      const [photos, milestones, growth, diary, health] = await Promise.all([
-        API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[]), API.getParenting().catch(()=>[]), API.getDailyLogs().catch(()=>[]), API.getDailyLogs().catch(()=>[])
+      const [photos, milestones, growth, diary, health, parenting, dailyLogs] = await Promise.all([
+        API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[]), API.getParenting().catch(()=>[]), API.getDailyLogs().catch(()=>[])
       ]);
       appData.photos = photos;
       appData.milestones = milestones;
@@ -879,11 +879,11 @@ function setupMainApp() {
 
 async function reloadData() {
   try {
-    const [photos, milestones, growth, diary, health] = await Promise.all([
-      API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[]), API.getParenting().catch(()=>[]), API.getDailyLogs().catch(()=>[]), API.getDailyLogs().catch(()=>[])
+    const [photos, milestones, growth, diary, health, parenting, dailyLogs] = await Promise.all([
+      API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[]), API.getParenting().catch(()=>[]), API.getDailyLogs().catch(()=>[])
    ]);
     appData.photos = photos; appData.milestones = milestones;
-    appData.growthRecords = growth; appData.diaryEntries = diary; appData.healthRecords = health||[]; appData.parentingChecks = parenting||[]; appData.dailyLogs = dailyLogs||[]; appData.parentingChecks = parenting||[]; appData.dailyLogs = dailyLogs||[];
+    appData.growthRecords = growth; appData.diaryEntries = diary; appData.healthRecords = health||[]; appData.parentingChecks = parenting||[]; appData.dailyLogs = dailyLogs||[];
   } catch (e) { console.error('Reload error:', e); }
 }
 
