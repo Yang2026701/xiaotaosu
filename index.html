@@ -704,6 +704,19 @@ const U = {
   }
 };
 
+// ---- Event Emitter + Store (state management) ----
+var Emitter = { _events: {},
+  on: function(e,fn){(this._events[e]=this._events[e]||[]).push(fn);},
+  emit: function(e,d){var l=this._events[e];if(l)l.forEach(function(f){f(d);});}
+};
+
+var Store = {
+  setAll: function(data){
+    Object.keys(data).forEach(function(k){appData[k]=data[k];});
+    Emitter.emit('dataChanged',{});
+  }
+};
+
 // ---- API (Supabase via fetch) ----
 const API = {
   _fetch(method, path, body) {
@@ -925,14 +938,7 @@ async function enterApp(config) {
       const [photos, milestones, growth, diary, health, parenting, dailyLogs, milestoneGuesses] = await Promise.all([
         API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[]), API.getParenting().catch(()=>[]), API.getDailyLogs().catch(()=>[]), API.getGuesses().catch(()=>[])
       ]);
-      appData.photos = photos;
-      appData.milestones = milestones;
-      appData.growthRecords = growth;
-      appData.diaryEntries = diary;
-      appData.healthRecords = health||[];
-      appData.parentingChecks = parenting||[];
-      appData.dailyLogs = dailyLogs||[];
-      appData.milestoneGuesses = milestoneGuesses||[];
+      Store.setAll({photos:photos,milestones:milestones,growthRecords:growth,diaryEntries:diary,healthRecords:health||[],parentingChecks:parenting||[],dailyLogs:dailyLogs||[],milestoneGuesses:milestoneGuesses||[]});
       isFirstRun = growth.length === 0;
     } catch (e) {
       console.error('Load error:', e);
@@ -1037,6 +1043,9 @@ function setupMainApp() {
   // Init pages
   initPhotoInput();
   setInterval(updateAge, 60000);
+
+  // Auto-refresh on any data change (modal save, delete, etc.)
+  Emitter.on('actionDone', async function(){ await reloadData(); renderPage(); });
 }
 
 async function reloadData() {
@@ -1044,8 +1053,7 @@ async function reloadData() {
     const [photos, milestones, growth, diary, health, parenting, dailyLogs, milestoneGuesses] = await Promise.all([
       API.getPhotos(), API.getMilestones(), API.getGrowth(), API.getDiary(), API.getHealth().catch(()=>[]), API.getParenting().catch(()=>[]), API.getDailyLogs().catch(()=>[]), API.getGuesses().catch(()=>[])
    ]);
-    appData.photos = photos; appData.milestones = milestones;
-    appData.growthRecords = growth; appData.diaryEntries = diary; appData.healthRecords = health||[]; appData.parentingChecks = parenting||[]; appData.dailyLogs = dailyLogs||[]; appData.milestoneGuesses = milestoneGuesses||[];
+    Store.setAll({photos:photos,milestones:milestones,growthRecords:growth,diaryEntries:diary,healthRecords:health||[],parentingChecks:parenting||[],dailyLogs:dailyLogs||[],milestoneGuesses:milestoneGuesses||[]});
   } catch (e) { console.error('Reload error:', e); }
 }
 
@@ -1097,7 +1105,7 @@ function showModal(title,body,onSave,onOpen) {
   $('#mcancel').addEventListener('click',closeModal);
   $('#msave').addEventListener('click',async()=>{
     if(modalOnSave){const r=await modalOnSave();if(r===false)return;}
-    closeModal();reloadData().then(()=>renderPage());
+    closeModal();Emitter.emit('actionDone');
   });
   if(onOpen)onOpen();
   setTimeout(()=>{const f=$('#mbody input, #mbody textarea, #mbody select, #mbody button');if(f)f.focus();},100);
@@ -1403,7 +1411,7 @@ function showLightbox(photos,p){
     const nx=ov.querySelector('.lb-next');if(nx)nx.onclick=()=>{idx++;ri();};
     ov.querySelector('#lb-edit').onclick=()=>{showEditMediaForm(cur,ri);};
     ov.querySelector('#lb-fav').onclick=async()=>{cur.favorite=!cur.favorite;await API.updatePhoto(cur.id,{favorite:cur.favorite});const photo=appData.photos.find(x=>x.id===cur.id);if(photo)photo.favorite=cur.favorite;ri();};
-    ov.querySelector('#lb-del').onclick=()=>{confirm('确定删除这张照片吗？',async()=>{await API.deletePhoto(cur.id);toast('已删除','ok');close();reloadData().then(()=>renderPage());});};
+    ov.querySelector('#lb-del').onclick=()=>{confirm('确定删除这张照片吗？',async()=>{await API.deletePhoto(cur.id);toast('已删除','ok');close();Emitter.emit('actionDone');});};
   }
   function close(){ov.remove();document.removeEventListener('keydown',onKey);}
   function onKey(e){if(e.key==='Escape')close();if(e.key==='ArrowLeft'&&idx>0){idx--;ri();}if(e.key==='ArrowRight'&&idx<photos.length-1){idx++;ri();}}
@@ -1453,7 +1461,7 @@ function renderMilestones(){
 
   $$('#msfilters .chip').forEach(ch=>{ch.addEventListener('click',()=>{msCat=ch.dataset.cat;renderMilestones();});});
   $$('.btn-edit-ms').forEach(b=>{b.addEventListener('click',(e)=>{e.stopPropagation();const ms=milestones.find(x=>x.id===b.dataset.id);if(ms)showMsForm(ms);});});
-  $$('.btn-del-ms').forEach(b=>{b.addEventListener('click',(e)=>{e.stopPropagation();confirm('确定删除这个里程碑吗？',async()=>{await API.deleteMilestone(b.dataset.id);toast('已删除','ok');reloadData().then(()=>renderPage());});});});
+  $$('.btn-del-ms').forEach(b=>{b.addEventListener('click',(e)=>{e.stopPropagation();confirm('确定删除这个里程碑吗？',async()=>{await API.deleteMilestone(b.dataset.id);toast('已删除','ok');Emitter.emit('actionDone');});});});
 }
 
 function showMsForm(existing){
@@ -1689,7 +1697,7 @@ function renderGrowth(){
 
   $('#page-growth').innerHTML=html;
   $('#btn-add-gr')?.addEventListener('click',showGrForm);
-  $$('.btn-del-gr').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();confirm('确定删除？',async function(){await API.deleteGrowth(b.dataset.id);toast('已删除','ok');reloadData().then(function(){renderPage();});});});});
+  $$('.btn-del-gr').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();confirm('确定删除？',async function(){await API.deleteGrowth(b.dataset.id);toast('已删除','ok');Emitter.emit('actionDone');});});});
 }
 
 // ---- SVG Chart Renderer (zero dependencies) ----
@@ -1938,7 +1946,7 @@ function renderDiaryDetail(e){
 
   $('#dback').addEventListener('click',function(){diaryDetail=null;renderDiary();});
   $('#dedit').addEventListener('click',function(){diaryDetail=null;showDiaryForm(e);});
-  $('#ddel').addEventListener('click',function(){confirm('确定删除？',async function(){await API.deleteDiary(e.id);toast('已删除','ok');diaryDetail=null;reloadData().then(function(){renderPage();});});});
+  $('#ddel').addEventListener('click',function(){confirm('确定删除？',async function(){await API.deleteDiary(e.id);toast('已删除','ok');diaryDetail=null;Emitter.emit('actionDone');});});
 }
 
 function showDiaryForm(existing,tplName,tplTitle,tplContent){
@@ -2087,7 +2095,7 @@ function showDailyForm(type){
 
 }
 
-window._dodl=function(id){confirm('删除？',async function(){await API.deleteDailyLog(id);toast('已删除','ok');reloadData().then(function(){renderPage();});});};
+window._dodl=function(id){confirm('删除？',async function(){await API.deleteDailyLog(id);toast('已删除','ok');Emitter.emit('actionDone');});};
 
 
 //  WEEKLY REPORT
@@ -2848,10 +2856,10 @@ function renderHealth(){
   // Bind events
   $('#hr-add')?.addEventListener('click',showHealthForm);
   $('#pending-tile')?.addEventListener('click',()=>showPendingList(dueVaccines,dueCheckups,records));
-  $$('.btn-hr-del').forEach(b=>{b.addEventListener('click',e=>{e.stopPropagation();confirm('确定删除？',async()=>{await API.deleteHealth(b.dataset.id);toast('已删除','ok');reloadData().then(()=>renderPage());});});});
+  $$('.btn-hr-del').forEach(b=>{b.addEventListener('click',e=>{e.stopPropagation();confirm('确定删除？',async()=>{await API.deleteHealth(b.dataset.id);toast('已删除','ok');Emitter.emit('actionDone');});});});
   $$('.btn-hr-done').forEach(b=>{b.addEventListener('click',async e=>{e.stopPropagation();
     const h={id:U.genId('h'),recordType:b.dataset.type||'vaccine',title:b.dataset.v,date:U.today(),ageDays:parseInt(b.dataset.days)||0,notes:'',isCompleted:true};
-    await API.addHealth(h);toast('已记录','ok');celebrate();reloadData().then(()=>renderPage());
+    await API.addHealth(h);toast('已记录','ok');celebrate();Emitter.emit('actionDone');
   });});
 }
 
@@ -3160,14 +3168,9 @@ async function toggleParentingCheck(stageKey,itemKey){
   const nowCompleted=!existing;
   try{
     await API.saveParentingCheck(stageKey,itemKey,nowCompleted);
-    if(nowCompleted){
-      appData.parentingChecks.push({stage_key:stageKey,item_key:itemKey,completed:true});
-    }else{
-      appData.parentingChecks=appData.parentingChecks.filter(c=>(c.stage_key+'_'+c.item_key)!==cid);
-    }
     toast(nowCompleted?'已标记完成 ✓':'已取消标记','ok');
     if(nowCompleted)celebrate();
-    renderParenting();
+    Emitter.emit('actionDone');
   }catch(e){toast('操作失败: '+e.message,'err');}
 }
 // ============================================================
