@@ -411,6 +411,78 @@ input:focus,textarea:focus,select:focus{outline:none}
 #main{padding-bottom:0;max-width:none}body{background:#fff;color:#000}
 .card,.ms-card,.dc{box-shadow:none;border:1px solid #ddd}
 }
+
+/* ===== WEEKLY REPORT (手账杂志风) ===== */
+.wr-wrap{padding-bottom:80px}
+.wr-header{display:flex;align-items:center;justify-content:center;gap:16px;padding:8px 0 20px}
+.wr-nav-btn{width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid #F0E8E0;color:#8D6E63;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.wr-nav-btn:active{background:#FFEDE6;border-color:#FFA07A}
+.wr-nav-btn.disabled{opacity:.3;pointer-events:none}
+.wr-week-label{font-size:1rem;font-weight:600;color:#4E342E;letter-spacing:1px;min-width:180px;text-align:center}
+.wr-week-sub{font-size:.7rem;color:#BCAAA4;font-weight:400;display:block;margin-top:2px}
+.wr-card{background:#fff;border-radius:16px;padding:18px 16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);border:1px solid #F5EDE5;position:relative;overflow:hidden}
+.wr-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#FFA07A,#FFB6C1,#FFD1C4,#FFA07A);opacity:.5}
+.wr-card.paper{background:linear-gradient(180deg,#FFFBF5,#FFF9F0,#FFFBF5)}
+.wr-section-t{font-size:.95rem;font-weight:600;color:#5D4037;margin-bottom:14px;padding-bottom:8px;border-bottom:1px dashed #EDE0D5;letter-spacing:.5px;display:flex;align-items:center;gap:6px}
+.wr-section-t .wr-ico{font-size:1.2rem}
+.wr-stat-row{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.wr-stat-badge{flex:1;min-width:70px;background:#FFFBF5;border-radius:12px;padding:12px 10px;text-align:center;border:1px solid #F5EDE5}
+.wr-stat-badge .wr-sv{font-size:1.4rem;font-weight:700;color:#FF8C69;line-height:1.2}
+.wr-stat-badge .wr-sl{font-size:.65rem;color:#BCAAA4;margin-top:4px}
+.wr-stat-badge.accent .wr-sv{color:#81C784}
+.wr-stat-badge.formula .wr-sv{color:#FFA07A}
+.wr-stat-badge.breast .wr-sv{color:#FF91A4}
+
+/* Feed bar chart */
+.wr-bars{display:flex;align-items:flex-end;gap:6px;height:100px;padding:4px 0}
+.wr-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.wr-bar{width:100%;max-width:32px;border-radius:6px 6px 2px 2px;transition:height .3s;min-height:4px}
+.wr-bar.fm{background:linear-gradient(180deg,#FFA07A,#FFCCA0)}
+.wr-bar.bm{background:linear-gradient(180deg,#FF91A4,#FFC4D0)}
+.wr-bar-label{font-size:.6rem;color:#BCAAA4;text-align:center}
+.wr-bar-val{font-size:.55rem;color:#8D6E63;font-weight:500}
+
+/* Feed summary */
+.wr-feed-summary{display:flex;gap:8px;margin-top:12px;font-size:.75rem;color:#8D6E63;flex-wrap:wrap}
+.wr-feed-tag{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:500}
+.wr-feed-tag.fm-tag{background:#FFF0EB;color:#FF8C69}
+.wr-feed-tag.bm-tag{background:#FFF0F3;color:#FF91A4}
+
+/* Photo strip */
+.wr-photo-strip{display:flex;gap:10px;overflow-x:auto;padding:4px 0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.wr-photo-strip::-webkit-scrollbar{display:none}
+.wr-photo-item{flex-shrink:0;width:80px;text-align:center}
+.wr-photo-img{width:80px;height:80px;border-radius:6px;object-fit:cover;background:#FFEDE6;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.wr-photo-cap{font-size:.6rem;color:#BCAAA4;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px}
+
+/* Diary snippet */
+.wr-diary-item{padding:10px 14px;margin-bottom:8px;background:linear-gradient(135deg,#FFFBF5,#FFF8F0);border-radius:10px;border-left:3px solid #FFD1C4}
+.wr-diary-mood{font-size:1.2rem;margin-right:4px}
+.wr-diary-date{font-size:.65rem;color:#BCAAA4;margin-bottom:4px}
+.wr-diary-text{font-size:.8rem;color:#6D5D55;line-height:1.5;font-style:italic;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wr-diary-more{font-size:.65rem;color:#FFA07A;margin-top:4px;cursor:pointer}
+
+/* AI insight card */
+.wr-ai-card{background:linear-gradient(135deg,#FFFBF5 0%,#FFF5F0 50%,#FFF0F3 100%);border-radius:16px;padding:18px 16px;margin-bottom:16px;border:1.5px solid transparent;background-clip:padding-box;position:relative}
+.wr-ai-card::before{content:'';position:absolute;inset:-2px;border-radius:18px;background:linear-gradient(135deg,#FFA07A,#FFB6C1,#FFD1C4,#FFA07A);z-index:-1;opacity:.4}
+.wr-ai-card .wr-ai-title{font-size:.9rem;font-weight:600;color:#FF8C69;margin-bottom:10px}
+.wr-ai-card .wr-ai-body{font-size:.82rem;color:#5D4037;line-height:1.7}
+.wr-ai-card .wr-ai-footer{font-size:.6rem;color:#BCAAA4;text-align:right;margin-top:10px}
+.wr-ai-loading{text-align:center;padding:16px;color:#BCAAA4;font-size:.8rem}
+.wr-ai-loading .dot-pulse{display:inline-block;animation:wrDot 1.4s infinite}
+@keyframes wrDot{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.wr-ai-setup{text-align:center;padding:20px;color:#BCAAA4}
+.wr-ai-setup .wr-ai-setup-btn{margin-top:10px;display:inline-block;padding:8px 20px;background:linear-gradient(135deg,#FFA07A,#FF8C69);color:#fff;border-radius:20px;font-size:.8rem;cursor:pointer;transition:transform .15s}
+.wr-ai-setup .wr-ai-setup-btn:active{transform:scale(.95)}
+
+/* Weekly regenerate button */
+.wr-regen{display:inline-flex;align-items:center;gap:4px;padding:6px 14px;background:#fff;border:1px solid #F0E8E0;border-radius:20px;color:#8D6E63;font-size:.7rem;cursor:pointer;transition:all .15s}
+.wr-regen:active{background:#FFEDE6}
+
+/* Weekly milestone item */
+.wr-ms-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#FFFBF5;border-radius:10px;margin-bottom:6px;border:1px solid #F5EDE5;font-size:.8rem}
+.wr-ms-emoji{font-size:1.3rem}
+.wr-ms-date{font-size:.65rem;color:#BCAAA4;margin-left:auto}
 </style>
 </head>
 <body>
@@ -475,7 +547,7 @@ input:focus,textarea:focus,select:focus{outline:none}
     <section id="page-growth" class="page" hidden></section>
     <section id="page-diary" class="page" hidden></section>
     <section id="page-parenting" class="page" hidden></section>
-    <section id="page-daily" class="page" hidden></section><section id="page-health" class="page" hidden></section>
+    <section id="page-daily" class="page" hidden></section><section id="page-weekly" class="page" hidden></section><section id="page-health" class="page" hidden></section>
     <section id="page-settings" class="page" hidden></section>
   </main>
 
@@ -485,7 +557,7 @@ input:focus,textarea:focus,select:focus{outline:none}
     <button class="tab" data-tab="growth"><span class="ti">📊</span>发育</button>
     <button class="tab" data-tab="diary"><span class="ti">📝</span>日记</button>
     <button class="tab" data-tab="parenting"><span class="ti">📚</span>育儿</button>
-    <button class="tab" data-tab="daily"><span class="ti">📋</span>日常</button><button class="tab" data-tab="health"><span class="ti">🩺</span>健康</button>
+    <button class="tab" data-tab="daily"><span class="ti">📋</span>日常</button><button class="tab" data-tab="weekly"><span class="ti">📰</span>周报</button><button class="tab" data-tab="health"><span class="ti">🩺</span>健康</button>
   </nav>
 
   <button id="fab" class="hidden">+</button>
@@ -851,7 +923,7 @@ function setupMainApp() {
   updateAge();
 
   const hash = location.hash.replace('#','');
-  activeTab = ['album','milestones','growth','diary','daily','parenting','health','settings'].includes(hash) ? hash : 'album';
+  activeTab = ['album','milestones','growth','diary','daily','weekly','parenting','health','settings'].includes(hash) ? hash : 'album';
   location.hash = activeTab;
   navigate(activeTab);
 
@@ -862,7 +934,7 @@ function setupMainApp() {
 
   window.addEventListener('hashchange', async () => {
     const tab = location.hash.replace('#','');
-    if (['album','milestones','growth','diary','daily','parenting','health','settings'].includes(tab)) {
+    if (['album','milestones','growth','diary','daily','weekly','parenting','health','settings'].includes(tab)) {
       await reloadData();
       navigate(tab);
     }
@@ -894,7 +966,7 @@ function navigate(tab) {
   $$('.page').forEach(p=>p.hidden=true);
   const pg=$('#page-'+tab); if(pg)pg.hidden=false;
   $$('#tabs .tab').forEach(b=>{b.classList.toggle('active',b.dataset.tab===tab);});
-  $('#fab').classList.toggle('hidden', tab==='settings'||tab==='daily');
+  $('#fab').classList.toggle('hidden', tab==='settings'||tab==='daily'||tab==='weekly');
   if(fabMenuOpen)closeFabMenu();
   if(activeTab!==tab&&activeTab==='growth'){if(heightChart)heightChart.destroy();if(weightChart)weightChart.destroy();}
   activeTab=tab;
@@ -910,6 +982,7 @@ function renderPage() {
     case'diary':renderDiary();break;
     case'parenting':renderParenting();break;
     case'daily':renderDaily();break;
+    case'weekly':renderWeekly();break;
     case'health':renderHealth();break;
     case'settings':renderSettings();break;
   }
@@ -985,6 +1058,7 @@ function handleFab(e) {
     case'milestones':showMsForm();break;
     case'growth':$('#btn-add-gr')?.click();break;
     case'diary':showDiaryForm();break;
+    case'weekly':break;
   }
 }
 function closeFabMenu(){
@@ -1783,6 +1857,274 @@ function showDailyForm(type){
 
 window._dodl=function(id){confirm('删除？',async function(){await API.deleteDailyLog(id);toast('已删除','ok');reloadData().then(function(){renderPage();});});};
 
+
+//  WEEKLY REPORT
+// ============================================================
+var weeklyWeekStart=null;
+
+function getWeekRange(dateStr){
+  var d=new Date(dateStr+'T00:00:00');
+  var day=d.getDay();
+  var monOffset=day===0?-6:1-day;
+  var mon=new Date(d);mon.setDate(d.getDate()+monOffset);
+  var sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  function fmt(dd){return dd.getFullYear()+'-'+('0'+(dd.getMonth()+1)).slice(-2)+'-'+('0'+dd.getDate()).slice(-2);}
+  var monStr=fmt(mon),sunStr=fmt(sun);
+  var label=(mon.getMonth()+1)+'月'+mon.getDate()+'日 - '+(sun.getMonth()+1)+'月'+sun.getDate()+'日';
+  if(mon.getMonth()!==sun.getMonth())label=(mon.getMonth()+1)+'月'+mon.getDate()+'日 - '+(sun.getMonth()+1)+'月'+sun.getDate()+'日';
+  return{mon:monStr,sun:sunStr,label:label,monDate:mon,sunDate:sun};
+}
+
+function isDateInRange(dateStr,week){
+  return dateStr>=week.mon&&dateStr<=week.sun;
+}
+
+function aggregateFeedByDay(weekLogs,week){
+  var days=[];
+  for(var i=0;i<7;i++){
+    var d=new Date(week.monDate);d.setDate(d.getDate()+i);
+    var ds=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+    var dayLabels=['一','二','三','四','五','六','日'];
+    var formulaCount=0,formulaMl=0,breastCount=0,breastMin=0,breastMl=0;
+    for(var j=0;j<weekLogs.length;j++){
+      var l=weekLogs[j];
+      if(l.logType!=='feed'||l.date!==ds)continue;
+      if(l.valueText&&l.valueText.indexOf('母乳')===0){
+        breastCount++;breastMin+=(l.valueNum||0);
+        var bv=l.valueText.split('|')[1];if(bv)breastMl+=parseFloat(bv);
+      } else {formulaCount++;formulaMl+=(l.valueNum||0);}
+    }
+    days.push({day:dayLabels[i],date:ds,feeds:formulaCount+breastCount,formulaMl:formulaMl,breastMin:breastMin,breastMl:breastMl,formulaCount:formulaCount,breastCount:breastCount});
+  }
+  return days;
+}
+
+function aggregateSleepDiaper(weekLogs){
+  var sleepCount=0,sleepTotalMin=0,diaperCount=0;
+  for(var i=0;i<weekLogs.length;i++){
+    var l=weekLogs[i];
+    if(l.logType==='sleep'){sleepCount++;var m=parseInt(l.valueText);if(m>0)sleepTotalMin+=m;}
+    else if(l.logType==='diaper')diaperCount++;
+  }
+  return{sleepCount:sleepCount,sleepTotalMin:sleepTotalMin,diaperCount:diaperCount,avgSleep:Math.round(sleepTotalMin/Math.max(1,sleepCount))};
+}
+
+function renderWeekly(){
+  try{
+  var today=U.today();
+  if(!weeklyWeekStart){
+    var now=new Date(today+'T00:00:00');
+    var day=now.getDay();
+    var monOffset=day===0?-6:1-day;
+    var mon=new Date(now);mon.setDate(now.getDate()+monOffset);
+    weeklyWeekStart=mon.getFullYear()+'-'+('0'+(mon.getMonth()+1)).slice(-2)+'-'+('0'+mon.getDate()).slice(-2);
+  }
+  var week=getWeekRange(weeklyWeekStart);
+  var birth=appData.settings.birthDate;
+  var birthDate=new Date(birth+'T00:00:00');
+  var todayDate=new Date(today+'T00:00:00');
+
+  var weekGrowth=[],weekMilestones=[],weekDiary=[],weekPhotos=[],weekLogs=[];
+  for(var i=0;i<appData.growthRecords.length;i++){var r=appData.growthRecords[i];if(isDateInRange(r.date,week))weekGrowth.push(r);}
+  for(var i=0;i<appData.milestones.length;i++){var m=appData.milestones[i];if(isDateInRange(m.date,week))weekMilestones.push(m);}
+  for(var i=0;i<appData.diaryEntries.length;i++){var e=appData.diaryEntries[i];if(isDateInRange(e.date,week))weekDiary.push(e);}
+  for(var i=0;i<appData.photos.length;i++){var p=appData.photos[i];if(isDateInRange(p.date,week))weekPhotos.push(p);}
+  var dLogs=appData.dailyLogs||[];
+  for(var i=0;i<dLogs.length;i++){var l=dLogs[i];if(isDateInRange(l.date,week))weekLogs.push(l);}
+
+  var hasData=weekGrowth.length>0||weekMilestones.length>0||weekDiary.length>0||weekPhotos.length>0||weekLogs.length>0;
+
+  var h='<div class="wr-wrap">';
+
+  // === HEADER ===
+  h+='<div class="wr-header">';
+  var prevMon=new Date(week.monDate);prevMon.setDate(prevMon.getDate()-7);
+  var nextMon=new Date(week.monDate);nextMon.setDate(nextMon.getDate()+7);
+  var prevDisabled=prevMon<birthDate?' disabled':'';
+  var nextDisabled=nextMon>todayDate?' disabled':'';
+  h+='<button class="wr-nav-btn" id="wr-prev"'+prevDisabled+'>◀</button>';
+  h+='<span class="wr-week-label">'+week.label+'<span class="wr-week-sub">成长周报</span></span>';
+  h+='<button class="wr-nav-btn" id="wr-next"'+nextDisabled+'>▶</button>';
+  h+='</div>';
+
+  // === EMPTY STATES ===
+  if(week.monDate<birthDate){
+    h+=emptyState('🍑','宝宝还没出生呢','小桃酥将于 '+U.fmtDate(birth)+' 和我们见面~');
+  } else if(week.monDate>todayDate){
+    h+=emptyState('🔮','这是未来的一周','等这周到来后再来看看吧~');
+  } else if(!hasData){
+    h+=emptyState('📋','本周还没有记录','去「📋 日常」或「📝 日记」添加记录，下周就能看到周报啦~');
+  } else {
+    // === SECTION 1: Growth + Feeding ===
+    h+='<div class="wr-card paper"><div class="wr-section-t"><span class="wr-ico">📈</span>生长 & 喂养</div>';
+
+    // Growth stats
+    if(weekGrowth.length>0){
+      var firstG=weekGrowth[0],lastG=weekGrowth[weekGrowth.length-1];
+      var hDelta=lastG.height&&firstG.height?(lastG.height-firstG.height).toFixed(1):null;
+      var wDelta=lastG.weight&&firstG.weight?(lastG.weight-firstG.weight).toFixed(2):null;
+      var ageDays=lastG.ageInDays||0;
+      var whoRow=null;
+      for(var wi=0;wi<WHO_GIRLS.length;wi++){var row=WHO_GIRLS[wi];if(row[0]>=Math.round(ageDays/30.4375)){whoRow=row;break;}}
+      if(!whoRow&&WHO_GIRLS.length>0)whoRow=WHO_GIRLS[WHO_GIRLS.length-1];
+      h+='<div class="wr-stat-row">';
+      if(lastG.height)h+='<div class="wr-stat-badge"><div class="wr-sv">'+lastG.height+'cm</div><div class="wr-sl">身高'+(hDelta?(hDelta>0?' ↑+'+hDelta:' ↓'+hDelta):'')+'</div></div>';
+      if(lastG.weight)h+='<div class="wr-stat-badge"><div class="wr-sv">'+lastG.weight+'kg</div><div class="wr-sl">体重'+(wDelta?(wDelta>0?' ↑+'+wDelta:' ↓'+wDelta):'')+'</div></div>';
+      if(whoRow)h+='<div class="wr-stat-badge accent"><div class="wr-sv">P50:'+whoRow[3]+'cm</div><div class="wr-sl">同龄身高参考</div></div>';
+      h+='</div>';
+    } else {
+      h+='<div style="font-size:.8rem;color:#BCAAA4;margin-bottom:12px">本周无生长记录</div>';
+    }
+
+    // Feeding bars
+    var feedDays=aggregateFeedByDay(weekLogs,week);
+    var maxFeed=0;
+    for(var i=0;i<feedDays.length;i++){if(feedDays[i].feeds>maxFeed)maxFeed=feedDays[i].feeds;}
+    if(maxFeed>0){
+      h+='<div style="font-size:.8rem;color:#8D6E63;margin-bottom:6px;font-weight:500">🍼 每日喂养次数</div>';
+      h+='<div class="wr-bars">';
+      for(var i=0;i<feedDays.length;i++){
+        var fd=feedDays[i];
+        var barH=Math.max(4,fd.feeds>0?Math.round(fd.feeds/Math.max(1,maxFeed)*72):0);
+        h+='<div class="wr-bar-col"><div class="wr-bar fm" style="height:'+barH+'px"></div><div class="wr-bar-val">'+(fd.feeds>0?fd.feeds:'')+'</div><div class="wr-bar-label">'+fd.day+'</div></div>';
+      }
+      h+='</div>';
+
+      // Feed summary tags
+      var totalFeeds=0,totalFormula=0,totalBreastM=0,totalBreastV=0;
+      for(var i=0;i<feedDays.length;i++){totalFeeds+=feedDays[i].feeds;totalFormula+=feedDays[i].formulaMl;totalBreastM+=feedDays[i].breastMin;totalBreastV+=feedDays[i].breastMl;}
+      h+='<div class="wr-feed-summary">';
+      h+='<span class="wr-feed-tag fm-tag">🍼 配方 '+totalFormula+'ml</span>';
+      h+='<span class="wr-feed-tag bm-tag">🤱 母乳 '+totalBreastM+'分钟'+(totalBreastV>0?' '+totalBreastV+'ml':'')+'</span>';
+      h+='<span style="font-size:.7rem;color:#BCAAA4">共 '+totalFeeds+' 次</span>';
+      h+='</div>';
+    } else {
+      h+='<div style="font-size:.8rem;color:#BCAAA4">本周无喂养记录</div>';
+    }
+    h+='</div>';
+
+    // === SECTION 2: Sleep/Diaper + Milestones ===
+    var sd=aggregateSleepDiaper(weekLogs);
+    h+='<div class="wr-card paper"><div class="wr-section-t"><span class="wr-ico">😴</span>作息 & 里程碑</div>';
+    h+='<div class="wr-stat-row">';
+    h+='<div class="wr-stat-badge"><div class="wr-sv">'+sd.sleepCount+'次</div><div class="wr-sl">😴 本周睡眠 · 均'+sd.avgSleep+'分钟</div></div>';
+    h+='<div class="wr-stat-badge"><div class="wr-sv">'+sd.diaperCount+'次</div><div class="wr-sl">💩 本周换尿布</div></div>';
+    h+='</div>';
+
+    if(weekMilestones.length>0){
+      for(var i=0;i<weekMilestones.length;i++){
+        var ms=weekMilestones[i];
+        h+='<div class="wr-ms-item"><span class="wr-ms-emoji">'+(ms.emoji||'⭐')+'</span><div>'+U.esc(ms.title)+'</div><span class="wr-ms-date">'+U.fmtShort(ms.date)+'</span></div>';
+      }
+    } else {
+      h+='<div style="font-size:.8rem;color:#BCAAA4">本周暂无新里程碑，继续加油~</div>';
+    }
+    h+='</div>';
+
+    // === SECTION 3: Photos + Diary ===
+    h+='<div class="wr-card paper"><div class="wr-section-t"><span class="wr-ico">📷</span>照片 & 日记</div>';
+    if(weekPhotos.length>0){
+      h+='<div class="wr-photo-strip">';
+      var maxP=Math.min(weekPhotos.length,8);
+      for(var i=0;i<maxP;i++){
+        var ph=weekPhotos[i];
+        var purl=ph.thumbnailDataUrl||ph.dataUrl||'';
+        h+='<div class="wr-photo-item"><img src="'+U.esc(purl)+'" alt="" class="wr-photo-img" loading="lazy" onerror="this.style.display=\'none\'"><div class="wr-photo-cap">'+U.fmtShort(ph.date)+'</div></div>';
+      }
+      h+='</div>';
+    } else {
+      h+='<div style="text-align:center;padding:12px;color:#BCAAA4;font-size:.8rem">📸 本周还没有照片</div>';
+    }
+
+    if(weekDiary.length>0){
+      var maxD=Math.min(weekDiary.length,3);
+      for(var i=0;i<maxD;i++){
+        var dy=weekDiary[i];
+        var moodEmoji='📝';
+        for(var mi=0;mi<MOODS.length;mi++){if(MOODS[mi].key===dy.mood){moodEmoji=MOODS[mi].emoji;break;}}
+        var snippet=dy.content||'';
+        if(snippet.length>60)snippet=snippet.substring(0,60)+'...';
+        h+='<div class="wr-diary-item"><span class="wr-diary-mood">'+moodEmoji+'</span><span class="wr-diary-date">'+U.fmtShort(dy.date)+'</span><div class="wr-diary-text">'+U.esc(snippet||'（无内容）')+'</div></div>';
+      }
+    } else {
+      h+='<div style="font-size:.8rem;color:#BCAAA4;padding:8px 0">📝 本周还没有写日记呢</div>';
+    }
+    h+='</div>';
+
+    // === SECTION 4: AI Summary ===
+    var dsKey=getDSKey();
+    var aiContainerId='wr-ai-container';
+    h+='<div id="'+aiContainerId+'"><div class="wr-ai-card"><div class="wr-ai-loading">✨ 小桃酥AI正在书写本周成长小结...</div></div></div>';
+  }
+
+  h+='</div>';
+  $('#page-weekly').innerHTML=h;
+
+  // Bind nav buttons
+  setTimeout(function(){
+    var pb=document.getElementById('wr-prev');
+    var nb=document.getElementById('wr-next');
+    if(pb)pb.onclick=function(){
+      var d=new Date(weeklyWeekStart+'T00:00:00');d.setDate(d.getDate()-7);
+      weeklyWeekStart=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+      renderWeekly();
+    };
+    if(nb)nb.onclick=function(){
+      var d=new Date(weeklyWeekStart+'T00:00:00');d.setDate(d.getDate()+7);
+      weeklyWeekStart=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+      renderWeekly();
+    };
+  },100);
+
+  // AI section: load async
+  if(hasData&&week.monDate<=todayDate&&week.monDate>=birthDate){
+    setTimeout(function(){renderWRAI(weekGrowth,weekMilestones,weekLogs,weekDiary,weekPhotos,birth,week,aiContainerId);},200);
+  }
+
+  }catch(e){$('#page-weekly').innerHTML='<div class="empty"><div class="empty-icon">📰</div><div class="empty-title">出错了</div><div class="empty-desc">'+e.message+'</div></div>';}
+}
+
+async function renderWRAI(weekGrowth,weekMilestones,weekLogs,weekDiary,weekPhotos,birth,week,containerId){
+  var el=document.getElementById(containerId);
+  if(!el)return;
+  var dsKey=getDSKey();
+  if(!dsKey){
+    el.innerHTML='<div class="wr-ai-card"><div class="wr-ai-setup">🔑 配置 DeepSeek API 密钥，解锁 AI 周报分析~<br><span class="wr-ai-setup-btn" onclick="location.hash=\'settings\'">去设置 →</span></div></div>';
+    return;
+  }
+  try{
+    var babyName=appData.settings.babyName||'宝宝';
+    var age=U.age(birth,U.today());
+
+    // Build summary
+    var summary='';
+    if(weekGrowth.length>0){
+      var lg=weekGrowth[weekGrowth.length-1];
+      summary+='身高'+lg.height+'cm，体重'+lg.weight+'kg。';
+    }
+    var totalFeeds=0,totalMl=0;
+    for(var i=0;i<weekLogs.length;i++){if(weekLogs[i].logType==='feed'){totalFeeds++;totalMl+=(weekLogs[i].valueNum||0);}}
+    summary+='本周喂养'+totalFeeds+'次，共'+totalMl+'ml。';
+    var sd=aggregateSleepDiaper(weekLogs);
+    summary+='睡眠'+sd.sleepCount+'次，换尿布'+sd.diaperCount+'次。';
+    if(weekMilestones.length>0){summary+='新里程碑：';for(var i=0;i<weekMilestones.length;i++)summary+=weekMilestones[i].title+'、';}
+    if(weekDiary.length>0)summary+='写了'+weekDiary.length+'篇日记。';
+    if(weekPhotos.length>0)summary+='拍了'+weekPhotos.length+'张照片。';
+
+    var result=await callDeepSeek(
+      '请为"'+babyName+'"（现在'+age.text+'）写一段本周成长周报小结。\n\n本周数据摘要：\n'+summary+'\n\n请用150字以内，温暖可爱的手账风格，像朋友聊天一样。用第二人称称呼宝宝。加入1-2个合适的emoji。不要编造不存在的数据。',
+      '你是一个温暖的育儿周报助手，为宝宝写成长周总结。风格温馨可爱，像手账周记。简洁有重点。'
+    );
+    el.innerHTML='<div class="wr-ai-card"><div class="wr-ai-title">✨ AI 成长小结</div><div class="wr-ai-body">'+result.replace(/\n/g,'<br>')+'</div><div class="wr-ai-footer">由 DeepSeek AI 生成 · 仅供参考</div></div>';
+  }catch(e){
+    var msg=e.message||'';
+    if(msg.indexOf('NO_KEY')>=0){
+      el.innerHTML='<div class="wr-ai-card"><div class="wr-ai-setup">🔑 配置 DeepSeek API 密钥，解锁 AI 周报分析~<br><span class="wr-ai-setup-btn" onclick="location.hash=\'settings\'">去设置 →</span></div></div>';
+    } else {
+      el.innerHTML='<div class="wr-ai-card"><div class="wr-ai-setup" style="color:#8D6E63">🤖 AI 暂时不可用<br><span style="font-size:.7rem">'+U.esc(msg.slice(0,80))+'</span></div></div>';
+    }
+  }
+}
 
 
 //  HEALTH PAGE
