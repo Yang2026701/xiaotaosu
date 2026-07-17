@@ -534,6 +534,18 @@ input:focus,textarea:focus,select:focus{outline:none}
 .wr-ms-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#FFFBF5;border-radius:10px;margin-bottom:6px;border:1px solid #F5EDE5;font-size:.8rem}
 .wr-ms-emoji{font-size:1.3rem}
 .wr-ms-date{font-size:.65rem;color:#BCAAA4;margin-left:auto}
+
+/* Share card */
+.wr-share-btn{display:block;margin:0 auto 16px;padding:12px 32px;border-radius:28px;background:linear-gradient(135deg,#FFA07A,#FF8C69);color:#fff;font-size:.9rem;font-weight:600;letter-spacing:2px;cursor:pointer;transition:all .15s;box-shadow:0 4px 16px rgba(255,140,105,.25)}
+.wr-share-btn:active{transform:scale(.95);box-shadow:0 2px 8px rgba(255,140,105,.15)}
+.sm-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.sm-overlay.hidden{display:none}
+.sm-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;font-size:1.3rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:301}
+.sm-card{position:relative;max-width:90vw;max-height:75vh;overflow:auto;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.25)}
+.sm-img{display:block;max-width:100%;border-radius:16px}
+.sm-hint{text-align:center;color:rgba(255,255,255,.8);font-size:.85rem;padding:12px 0 4px}
+.sm-download{display:block;margin:8px auto 0;padding:10px 28px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;font-size:.8rem;cursor:pointer;transition:background .15s}
+.sm-download:active{background:rgba(255,255,255,.25)}
 </style>
 </head>
 <body>
@@ -625,6 +637,16 @@ input:focus,textarea:focus,select:focus{outline:none}
   <div id="toasts"></div>
   <input type="file" id="photo-input" accept="image/*" hidden>
   <input type="file" id="video-input" accept="video/*" hidden>
+</div>
+
+<!-- Share card overlay -->
+<div class="sm-overlay hidden" id="sm-overlay">
+  <button class="sm-close" id="sm-close">✕</button>
+  <div class="sm-card" id="sm-card-wrap">
+    <img class="sm-img" id="sm-img" src="" alt="成长周报分享卡片" />
+  </div>
+  <div class="sm-hint">📱 长按图片保存到相册</div>
+  <button class="sm-download" id="sm-dl">💾 下载图片</button>
 </div>
 
 <script>
@@ -2317,6 +2339,13 @@ function renderWeekly(){
   }
 
   h+='</div>';
+
+  // Share button (only if has data, week is not future/past)
+  if(hasData&&week.monDate<=todayDate&&week.monDate>=birthDate){
+    h+='<button class="wr-share-btn" id="wr-share">📤 生成分享卡片</button>';
+  }
+
+  h+='</div>';
   $('#page-weekly').innerHTML=h;
 
   // Bind nav buttons
@@ -2333,6 +2362,9 @@ function renderWeekly(){
       weeklyWeekStart=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
       renderWeekly();
     };
+    // Share button
+    var sb=document.getElementById('wr-share');
+    if(sb)sb.onclick=function(){showShareCard();};
   },100);
 
   // AI section: load async
@@ -2384,6 +2416,246 @@ async function renderWRAI(weekGrowth,weekMilestones,weekLogs,weekDiary,weekPhoto
     }
   }
 }
+
+
+//  SHARE CARD
+// ============================================================
+function wrapText(ctx,text,maxW){
+  var words=text.split(''),lines=[],line='';
+  for(var i=0;i<words.length;i++){
+    var test=line+words[i];
+    if(ctx.measureText(test).width>maxW&&line.length>0){lines.push(line);line=words[i];}
+    else line=test;
+  }
+  if(line.length>0)lines.push(line);
+  return lines;
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+function drawShareCard(week,weekGrowth,weekLogs,weekMilestones,weekDiary,weekPhotos){
+  var dpr=window.devicePixelRatio||1;
+  var W=750,H=1100;
+  var c=document.createElement('canvas');
+  c.width=W*dpr;c.height=H*dpr;
+  c.style.width=W+'px';c.style.height=H+'px';
+  var ctx=c.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  // Background
+  var bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#FEF9F5');bg.addColorStop(0.3,'#FFF5F0');bg.addColorStop(0.6,'#FFF0EB');bg.addColorStop(1,'#FEF7F3');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+  // Top decorative stripe
+  var stripe=ctx.createLinearGradient(0,0,W,0);
+  stripe.addColorStop(0,'#FFA07A');stripe.addColorStop(0.5,'#FFB6C1');stripe.addColorStop(1,'#FFD1C4');
+  ctx.fillStyle=stripe;ctx.fillRect(0,0,W,6);
+
+  // === HEADER ===
+  ctx.fillStyle='#FFA07A';ctx.font='bold 42px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('🍑',W/2,82);
+
+  var babyName=appData.settings.babyName||'宝宝';
+  ctx.fillStyle='#4E342E';ctx.font='bold 44px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+  ctx.fillText(babyName+'的成长周报',W/2,152);
+
+  ctx.fillStyle='#A09085';ctx.font='24px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+  ctx.fillText(week.label,W/2,192);
+
+  // === SECTION 1: Growth + Feeding ===
+  var y=232;
+  ctx.fillStyle='#FFFFFF';ctx.strokeStyle='rgba(240,232,224,.6)';ctx.lineWidth=1;
+  roundRect(ctx,32,y,W-64,210,20);
+  ctx.fill();ctx.stroke();
+
+  ctx.fillStyle='#5D4037';ctx.font='bold 26px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText('📈 生长 & 喂养',60,y+42);
+
+  // Stat columns
+  var colW=Math.floor((W-64)/3);
+  var sx=32;
+  if(weekGrowth.length>0){
+    var lg=weekGrowth[weekGrowth.length-1];
+    var ageDays=lg.ageInDays||0;
+    var whoRow=null;
+    for(var wi=0;wi<WHO_GIRLS.length;wi++){var row=WHO_GIRLS[wi];if(row[0]>=Math.round(ageDays/30.4375)){whoRow=row;break;}}
+    if(!whoRow&&WHO_GIRLS.length>0)whoRow=WHO_GIRLS[WHO_GIRLS.length-1];
+
+    if(lg.height!=null){
+      ctx.fillStyle='#FF8C69';ctx.font='bold 36px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText(lg.height+'cm',sx+colW*0.5,y+96);
+      ctx.fillStyle='#A09085';ctx.font='18px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+      ctx.fillText('身高',sx+colW*0.5,y+126);
+    }
+    if(lg.weight!=null){
+      ctx.fillStyle='#81C784';ctx.font='bold 36px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText(lg.weight+'kg',sx+colW*1.5,y+96);
+      ctx.fillStyle='#A09085';ctx.font='18px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+      ctx.fillText('体重',sx+colW*1.5,y+126);
+    }
+    if(whoRow){
+      ctx.fillStyle='#8D6E63';ctx.font='bold 36px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText(whoRow[3]+'cm',sx+colW*2.5,y+96);
+      ctx.fillStyle='#A09085';ctx.font='18px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+      ctx.fillText('同龄均值',sx+colW*2.5,y+126);
+    }
+  } else {
+    ctx.fillStyle='#BCAAA4';ctx.font='20px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('暂无生长记录',W/2,y+110);
+  }
+
+  // Feed summary
+  var feedDays=aggregateFeedByDay(weekLogs,week);
+  var totalFeeds=0,totalFormula=0,totalBreastM=0,totalBreastV=0;
+  for(var i=0;i<feedDays.length;i++){totalFeeds+=feedDays[i].feeds;totalFormula+=feedDays[i].formulaMl;totalBreastM+=feedDays[i].breastMin;totalBreastV+=feedDays[i].breastMl;}
+  var feedLine='';
+  if(totalFormula>0)feedLine+='🍼 配方奶 '+totalFormula+'ml';
+  if(totalBreastM>0){if(feedLine)feedLine+='  ·  ';feedLine+='🤱 母乳 '+totalBreastM+'分钟'+(totalBreastV>0?' '+totalBreastV+'ml':'');}
+  if(feedLine){
+    ctx.fillStyle='#6D5D55';ctx.font='20px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(feedLine+'  |  共 '+totalFeeds+' 次',W/2,y+180);
+  } else {
+    ctx.fillStyle='#BCAAA4';ctx.font='20px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('暂无喂养记录',W/2,y+180);
+  }
+
+  // === SECTION 2: Sleep/Diaper + Milestones ===
+  y=462;
+  roundRect(ctx,32,y,W-64,200,20);
+  ctx.fillStyle='#FFFFFF';ctx.fill();ctx.strokeStyle='rgba(240,232,224,.6)';ctx.stroke();
+
+  ctx.fillStyle='#5D4037';ctx.font='bold 26px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText('😴 作息 & 🏆 里程碑',60,y+42);
+
+  var sd=aggregateSleepDiaper(weekLogs);
+  ctx.fillStyle='#6D5D55';ctx.font='22px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('😴 睡眠 '+sd.sleepCount+' 次  |  💩 尿布 '+sd.diaperCount+' 次',W/2,y+90);
+
+  if(weekMilestones.length>0){
+    ctx.fillStyle='#FF8C69';ctx.font='bold 20px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+    var msText='';
+    for(var i=0;i<Math.min(weekMilestones.length,2);i++){
+      if(i>0)msText+='  ·  ';
+      msText+=weekMilestones[i].emoji+' '+weekMilestones[i].title;
+    }
+    ctx.fillText(msText,W/2,y+140);
+  } else {
+    ctx.fillStyle='#BCAAA4';ctx.font='18px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+    ctx.fillText('本周暂无新里程碑，继续加油~',W/2,y+140);
+  }
+
+  // === SECTION 3: Diary snippet ===
+  y=682;
+  var diaryY=y;
+  if(weekDiary.length>0){
+    var dy=weekDiary[0];
+    var snippet=dy.content||'';
+    if(snippet.length>80)snippet=snippet.substring(0,80)+'...';
+    roundRect(ctx,32,y,W-64,140,20);
+    ctx.fillStyle='#FFFFFF';ctx.fill();ctx.strokeStyle='rgba(240,232,224,.6)';ctx.stroke();
+
+    ctx.fillStyle='#5D4037';ctx.font='bold 26px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+    ctx.textAlign='left';
+    ctx.fillText('📝 本周日记',60,y+42);
+
+    ctx.fillStyle='#8D6E63';ctx.font='italic 20px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+    ctx.textAlign='center';
+    var lines=wrapText(ctx,'"'+snippet+'"',W-140);
+    for(var i=0;i<Math.min(lines.length,3);i++){
+      ctx.fillText(lines[i],W/2,y+82+i*30);
+    }
+  }
+
+  // === SECTION 4: AI summary (only if has data) ===
+  var hasData=weekGrowth.length>0||weekLogs.length>0||weekMilestones.length>0||weekDiary.length>0;
+  // AI section rendered on the card if there's content
+  var bottomY=diaryY+(weekDiary.length>0?160:10);
+
+  // Bottom message
+  var footerY=Math.max(bottomY+30,910);
+  ctx.fillStyle='#BCAAA4';ctx.font='20px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('💕 每一天都是珍贵的礼物',W/2,footerY);
+
+  ctx.fillStyle='#D7CCC8';ctx.font='16px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+  ctx.fillText('yang2026701.github.io/xiaotaosu',W/2,footerY+36);
+
+  // Stats footer
+  if(hasData){
+    var statText='';
+    if(weekPhotos.length>0)statText+='📷 '+weekPhotos.length+'张 ';
+    if(weekMilestones.length>0)statText+='🏆 '+weekMilestones.length+'个 ';
+    if(weekDiary.length>0)statText+='📝 '+weekDiary.length+'篇 ';
+    ctx.fillStyle='#D7CCC8';ctx.font='14px "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif';
+    ctx.fillText('本周记录了 '+statText,W/2,footerY+62);
+  }
+
+  return c.toDataURL('image/png');
+}
+
+function showShareCard(){
+  try{
+  var week=getWeekRange(weeklyWeekStart);
+  var birth=appData.settings.birthDate;
+
+  var weekGrowth=[],weekMilestones=[],weekDiary=[],weekPhotos=[],weekLogs=[];
+  for(var i=0;i<appData.growthRecords.length;i++){var r=appData.growthRecords[i];if(isDateInRange(r.date,week))weekGrowth.push(r);}
+  for(var i=0;i<appData.milestones.length;i++){var m=appData.milestones[i];if(isDateInRange(m.date,week))weekMilestones.push(m);}
+  for(var i=0;i<appData.diaryEntries.length;i++){var e=appData.diaryEntries[i];if(isDateInRange(e.date,week))weekDiary.push(e);}
+  for(var i=0;i<appData.photos.length;i++){var p=appData.photos[i];if(isDateInRange(p.date,week))weekPhotos.push(p);}
+  var dLogs=appData.dailyLogs||[];
+  for(var i=0;i<dLogs.length;i++){var l=dLogs[i];if(isDateInRange(l.date,week))weekLogs.push(l);}
+
+  // Show loading
+  toast('正在生成卡片...','ok');
+
+  setTimeout(function(){
+    try{
+      var dataUrl=drawShareCard(week,weekGrowth,weekLogs,weekMilestones,weekDiary,weekPhotos);
+      var img=document.getElementById('sm-img');
+      if(img)img.src=dataUrl;
+      var ov=document.getElementById('sm-overlay');
+      if(ov)ov.classList.remove('hidden');
+
+      // Download button
+      var dl=document.getElementById('sm-dl');
+      if(dl)dl.onclick=function(){
+        var a=document.createElement('a');
+        a.href=dataUrl;a.download=(appData.settings.babyName||'宝宝')+'_周报_'+week.label+'.png';
+        a.click();
+      };
+    }catch(e){toast('生成失败: '+e.message,'err');}
+  },200);
+  }catch(e){toast('生成失败: '+e.message,'err');}
+}
+
+// Share overlay setup
+(function(){
+  setTimeout(function(){
+    var ov=document.getElementById('sm-overlay');
+    var close=document.getElementById('sm-close');
+    if(close)close.addEventListener('click',function(){ov.classList.add('hidden');});
+    if(ov)ov.addEventListener('click',function(e){if(e.target===ov)ov.classList.add('hidden');});
+  },500);
+})();
 
 
 //  HEALTH PAGE
