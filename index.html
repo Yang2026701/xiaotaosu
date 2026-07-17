@@ -2428,32 +2428,37 @@ function getUpcomingMilestones(birthDate) {
 // ============================================================
 function emptyState(icon,title,desc){return'<div class="empty"><div class="empty-icon">'+icon+'</div><div class="empty-title">'+title+'</div><div class="empty-desc">'+desc+'</div></div>';}
 
-// ---- Chart.js dynamic loader ----
-let _chartJSLoaded=false,_chartJSLoading=false;
+// ---- Chart.js dynamic loader (multi-CDN fallback) ----
+var _chartJSLoaded=false,_chartJSLoading=false,_chartCDNs=[
+  'https://registry.npmmirror.com/chart.js/4.4.0/files/dist/chart.umd.min.js',
+  'https://unpkg.com/chart.js@4.4.0/dist/chart.umd.min.js',
+  'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'
+];
+function tryLoadCDN(i){
+  if(i>=_chartCDNs.length){_chartJSLoading=false;return;}var s=document.createElement('script');
+  s.src=_chartCDNs[i];s.onload=function(){_chartJSLoaded=true;_chartJSLoading=false;};
+  s.onerror=function(){tryLoadCDN(i+1);};document.head.appendChild(s);
+}
 function loadChartJS(){
   if(_chartJSLoaded)return Promise.resolve();
-  if(_chartJSLoading)return new Promise((ok)=>{const t=setInterval(()=>{if(_chartJSLoaded){clearInterval(t);ok();}},100);});
-  _chartJSLoading=true;
-  return new Promise((ok,no)=>{
-    const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
-    s.onload=()=>{_chartJSLoaded=true;_chartJSLoading=false;ok();};
-    s.onerror=()=>{_chartJSLoading=false;no(new Error('Chart.js load failed'));};
-    document.head.appendChild(s);
+  if(_chartJSLoading)return new Promise(function(ok){var t=setInterval(function(){if(_chartJSLoaded){clearInterval(t);ok();}},100);});
+  _chartJSLoading=true;tryLoadCDN(0);
+  return new Promise(function(ok,no){
+    var t=setInterval(function(){
+      if(_chartJSLoaded){clearInterval(t);ok();}
+    },100);
+    setTimeout(function(){if(!_chartJSLoaded){clearInterval(t);_chartJSLoading=false;no(new Error('所有CDN均加载失败'));}},6000);
   });
 }
 
-// Wrap renderCharts to load Chart.js first
-const _origRenderGrowth=renderGrowth;
-renderGrowth=function(){
-  _origRenderGrowth();
-  if(appData.growthRecords.length>0){
-    loadChartJS().then(()=>{
-      const records=[...appData.growthRecords].sort((a,b)=>a.date.localeCompare(b.date));
-      records.forEach(r=>{r.ageInDays=U.age(appData.settings.birthDate,r.date).totalDays;});
-      renderCharts(records,appData.settings.birthDate);
-    }).catch(()=>{$('#page-growth').insertAdjacentHTML('beforeend','<p style="text-align:center;color:#BCAAA4;margin-top:16px">📊 图表加载失败，请检查网络（数据记录正常）</p>');});
-  }
+// Wrap renderGrowth to preload Chart.js before charts render
+var _origRenderCharts=renderCharts;
+renderCharts=function(records,birth){
+  loadChartJS().then(function(){
+    _origRenderCharts(records,birth);
+  }).catch(function(){
+    var pg=$('#page-growth');if(pg)pg.insertAdjacentHTML('beforeend','<p style=\"text-align:center;color:#BCAAA4;margin-top:16px\">📊 图表加载失败，请检查网络（数据记录正常）</p>');
+  });
 };
 </script>
 </body>
