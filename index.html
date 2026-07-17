@@ -183,6 +183,14 @@ input:focus,textarea:focus,select:focus{outline:none}
 .pg-month{font-size:.875rem;font-weight:600;color:#8D6E63;padding:16px 0 8px;position:sticky;top:56px;background:#FFFBF5;z-index:5;display:flex;align-items:center;gap:8px}
 .pg-month-add{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(255,160,122,.15);color:#FFA07A;font-size:.8rem;cursor:pointer;transition:all .15s;flex-shrink:0;line-height:1}
 .pg-month-add:active{background:rgba(255,160,122,.3);transform:scale(.9)}
+
+/* Cute add dashed card — album & milestones */
+.add-dashed{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:16px;border:2px dashed #FFD1C4;border-radius:16px;background:rgba(255,240,235,.4);cursor:pointer;transition:all .2s}
+.add-dashed:active{background:rgba(255,220,210,.5);border-color:#FFA07A}
+.add-dashed-icon{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#FFA07A,#FF8C69);color:#fff;font-size:1.4rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(255,140,105,.25)}
+.add-dashed-info{flex:1;min-width:0}
+.add-dashed-title{font-size:.85rem;font-weight:600;color:#5D4037;margin-bottom:2px}
+.add-dashed-desc{font-size:.7rem;color:#BCAAA4}
 .pc{position:relative;border-radius:12px;overflow:hidden;background:#FFF5EE;aspect-ratio:1;cursor:pointer;transition:transform .25s}
 .pc:active{transform:scale(.97)}
 .pc img{width:100%;height:100%;object-fit:cover}
@@ -1388,19 +1396,23 @@ function renderAlbum() {
   const allTags=new Set();photos.forEach(p=>(p.tags||[]).forEach(t=>allTags.add(t)));
   let filtered=albumTag?photos.filter(p=>(p.tags||[]).includes(albumTag)):photos;
 
-  let html='';
+  var html='';
+
+  // Cute add card at the top
+  html+='<div class="add-dashed" onclick="document.getElementById(\'photo-input\').click()"><div class="add-dashed-icon">📸</div><div class="add-dashed-info"><div class="add-dashed-title">添加照片或视频</div><div class="add-dashed-desc">记录小桃酥的可爱瞬间~</div></div></div>';
+
   if(allTags.size>0){
     html+='<div class="chips" id="atags"><button class="chip'+(albumTag===null?' on':'')+'" data-tag="">📷 全部 <span style="font-size:.625rem;opacity:.8">'+photos.length+'</span></button>';
     [...allTags].sort().forEach(t=>{html+='<button class="chip'+(albumTag===t?' on':'')+'" data-tag="'+U.esc(t)+'">'+U.esc(t)+' <span style="font-size:.625rem;opacity:.8">'+photos.filter(p=>(p.tags||[]).includes(t)).length+'</span></button>';});
     html+='</div>';
   }
 
-  if(filtered.length===0){html+=emptyState('📸','还没有照片哦','点击 + 按钮添加小桃酥的第一张照片吧~');}
+  if(filtered.length===0){html+=emptyState('📸','还没有照片哦','点击上方卡片添加第一张照片吧~');}
   else{
     const groups=new Map();filtered.forEach(p=>{const m=p.date.substring(0,7);if(!groups.has(m))groups.set(m,[]);groups.get(m).push(p);});
     html+='<div class="photo-timeline">';
     for(const[month,mps]of groups){
-      html+='<div class="pg-month">'+U.fmtMonth(month+'-01')+'<span class="pg-month-add" onclick="document.getElementById(\'photo-input\').click()">+</span></div><div class="photo-grid">';
+      html+='<div class="pg-month">'+U.fmtMonth(month+'-01')+'</div><div class="photo-grid">';
       mps.forEach(p=>{
         html+='<div class="pc" data-id="'+p.id+'"><img src="'+(p.thumbnailDataUrl||p.dataUrl)+'" alt="'+U.esc(p.title||'照片')+'" loading="lazy" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23FFEDE6%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2255%22 text-anchor=%22middle%22 font-size=%2230%22>'+(p.isVideo?'🎬':'📷')+'</text></svg>\'">'+(p.isVideo?'<div class="pc-video-badge"></div>':'')+'<div class="pc-cap"><span>'+U.fmtShort(p.date)+'</span>'+(p.favorite?'<span class="pc-fav">⭐</span>':'')+'</div></div>';
       });
@@ -1451,7 +1463,9 @@ function renderMilestones(){
   let display=[...milestones].sort((a,b)=>b.date.localeCompare(a.date));
   if(msCat!=='all')display=display.filter(m=>m.category===msCat);
 
-  let html='<div class="ms-sum"><div class="ms-stat"><div class="ms-stat-v">'+U.age(birth,U.today()).text+'</div><div class="ms-stat-l">当前月龄</div></div><div class="ms-stat"><div class="ms-stat-v">'+achievedKeys.size+'</div><div class="ms-stat-l">已达成里程碑</div></div></div>';
+  let html='<div class="add-dashed" onclick="showMsForm()"><div class="add-dashed-icon">🏆</div><div class="add-dashed-info"><div class="add-dashed-title">记录新里程碑</div><div class="add-dashed-desc">宝宝的每一个"第一次"都值得记录~</div></div></div>';
+
+  html+='<div class="ms-sum"><div class="ms-stat"><div class="ms-stat-v">'+U.age(birth,U.today()).text+'</div><div class="ms-stat-l">当前月龄</div></div><div class="ms-stat"><div class="ms-stat-v">'+achievedKeys.size+'</div><div class="ms-stat-l">已达成里程碑</div></div></div>';
   html+='<div class="chips" id="msfilters">';
   MS_CATS.forEach(c=>{const cnt=c.key==='all'?achievedKeys.size:allTypes.filter(t=>t.category===c.key&&achievedKeys.has(t.key)).length;const tt=c.key==='all'?allTypes.length:allTypes.filter(t=>t.category===c.key).length;html+='<button class="chip'+(msCat===c.key?' on':'')+'" data-cat="'+c.key+'">'+c.emoji+' '+c.label+' <span style="font-size:.625rem;opacity:.8">'+cnt+'/'+tt+'</span></button>';});
   html+='</div>';
