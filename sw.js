@@ -1,16 +1,13 @@
 // Service Worker for 小桃酥的成长记录 PWA
-const CACHE_NAME = 'xiaotaosu-v3';
+// v4: Network-first for HTML to prevent stale cache issues
+const CACHE_NAME = 'xiaotaosu-v4';
 const ASSETS = [
-  '/xiaotaosu/',
-  '/xiaotaosu/index.html',
   '/xiaotaosu/manifest.json',
   '/xiaotaosu/icon-192.png',
-  '/xiaotaosu/icon-512.png',
-  // JS files are inlined in index.html, so just cache the HTML
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'
+  '/xiaotaosu/icon-512.png'
 ];
 
-// Install: cache core assets
+// Install: cache static assets only (NOT HTML)
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -32,23 +29,32 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch: network-first for API calls, cache-first for static assets
+// Fetch: network-only for API, network-first for HTML, cache-first for static
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // API calls: network only (don't cache Supabase data)
+  // API calls: bypass cache entirely
   if (url.hostname.includes('supabase.co') || url.pathname.includes('/rest/') || url.pathname.includes('/storage/')) {
-    return; // Let browser handle API calls normally
+    return;
   }
 
-  // Static assets: cache-first, network fallback
+  // HTML pages: ALWAYS network-first, never serve stale cache
+  if (event.request.destination === 'document' || url.pathname.endsWith('.html') || url.pathname === '/xiaotaosu/' || url.pathname === '/xiaotaosu') {
+    event.respondWith(
+      fetch(event.request).catch(function() {
+        return caches.match(event.request);
+      })
+    );
+    return;
+  }
+
+  // Static assets (icons, manifest): cache-first
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).then(response => {
-        // Cache successful responses
+    caches.match(event.request).then(function(cached) {
+      return cached || fetch(event.request).then(function(response) {
         if (response.ok && response.type === 'basic') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          var clone = response.clone();
+          caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, clone); });
         }
         return response;
       });
