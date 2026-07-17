@@ -655,17 +655,15 @@ input:focus,textarea:focus,select:focus{outline:none}
 // ============================================================
 
 // ---- Service Worker (PWA) ----
-// Force-clear ALL old service workers to fix caching issues
+// Aggressively unregister ALL service workers and NEVER re-register.
+// SW caching has caused repeated issues on mobile devices.
+// The site is served via GitHub Pages CDN which is fast enough.
 if('serviceWorker' in navigator){
   navigator.serviceWorker.getRegistrations().then(function(regs){
     regs.forEach(function(reg){reg.unregister();});
-    console.log('Cleared '+regs.length+' old service worker(s)');
-    // Re-register with latest version
-    return navigator.serviceWorker.register('/xiaotaosu/sw.js',{scope:'/xiaotaosu/'});
-  }).then(function(reg){
-    if(reg)console.log('SW re-registered:',reg.scope);
+    if(regs.length>0)console.log('Cleared '+regs.length+' service worker(s)');
   }).catch(function(err){
-    console.warn('SW error:',err);
+    console.warn('SW cleanup error:',err);
   });
 }
 
