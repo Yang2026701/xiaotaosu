@@ -280,6 +280,7 @@ input:focus,textarea:focus,select:focus{outline:none}
 .tbl{width:100%;border-collapse:collapse;font-size:.875rem}
 .tbl th,.tbl td{text-align:center;padding:8px 4px;border-bottom:1px solid #F0E8E0}
 .tbl th{font-weight:500;color:#BCAAA4;font-size:.75rem}
+.tbl td.gr-note{max-width:120px;min-width:60px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#8D6E63}
 
 /* Diary - enhanced */
 .diary-tl{position:relative;padding-left:20px}
@@ -1717,6 +1718,8 @@ function renderGuesses(){
 // ============================================================
 //  GROWTH PAGE
 // ============================================================
+var grSortDesc=true,grCollapsed=true;
+function toggleGrowthList(){grCollapsed=!grCollapsed;var b=document.getElementById('gr-body');if(b)b.style.display=grCollapsed?'none':'';var h=document.getElementById('gr-toggle');if(h)h.innerHTML='📋 记录列表 '+(grCollapsed?'▸':'▾');}
 function renderGrowth(){
   var records=appData.growthRecords.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
   var birth=appData.settings.birthDate;
@@ -1754,17 +1757,19 @@ function renderGrowth(){
   }
 
   // Records table
-  html+='<div class="chart-box"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">📋 记录列表</h3><button class="btn btn-p btn-sm" id="btn-add-gr">+ 添加记录</button></div>';
+  html+='<div class="chart-box"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0;cursor:pointer;user-select:none" id="gr-toggle" onclick="toggleGrowthList()">📋 记录列表 '+(grCollapsed?'▸':'▾')+'</h3><div style="display:flex;gap:8px"><button class="btn btn-s btn-sm" onclick="grSortDesc=!grSortDesc;renderGrowth()">'+(grSortDesc?'最新在前':'最早在前')+'</button><button class="btn btn-p btn-sm" id="btn-add-gr">+ 添加记录</button></div></div>';
+  html+='<div id="gr-body"'+(grCollapsed?' style="display:none"':'')+'>';
   if(records.length===0){html+=emptyState('📊','还没有发育记录','添加身高体重数据来生成生长曲线吧~');}
   else{
-    html+='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>日期</th><th>月龄</th><th>身高</th><th>体重</th><th>头围</th><th></th></tr></thead><tbody>';
-    records.slice().reverse().forEach(function(r){
+    html+='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>日期</th><th>月龄</th><th>身高</th><th>体重</th><th>头围</th><th>备注</th><th></th></tr></thead><tbody>';
+    var rows=grSortDesc?records.slice().reverse():records;
+    rows.forEach(function(r){
       var age=U.age(birth,r.date);
-      html+='<tr><td>'+U.fmtShort(r.date)+'</td><td>'+age.text+'</td><td>'+(r.height!=null?r.height+'cm':'-')+'</td><td>'+(r.weight!=null?r.weight+'kg':'-')+'</td><td>'+(r.headCircumference!=null?r.headCircumference+'cm':'-')+'</td><td><button class="btn btn-s btn-sm btn-del-gr" data-id="'+r.id+'">×</button></td></tr>';
+      html+='<tr><td>'+U.fmtShort(r.date)+'</td><td>'+age.text+'</td><td>'+(r.height!=null?r.height+'cm':'-')+'</td><td>'+(r.weight!=null?r.weight+'kg':'-')+'</td><td>'+(r.headCircumference!=null?r.headCircumference+'cm':'-')+'</td><td class="gr-note">'+(r.notes?U.esc(r.notes):'-')+'</td><td><button class="btn btn-s btn-sm btn-del-gr" data-id="'+r.id+'">×</button></td></tr>';
     });
     html+='</tbody></table></div>';
   }
-  html+='</div>';
+  html+='</div></div>';
 
   $('#page-growth').innerHTML=html;
   $('#btn-add-gr')?.addEventListener('click',showGrForm);
@@ -1773,9 +1778,9 @@ function renderGrowth(){
 
 // ---- SVG Chart Renderer (zero dependencies) ----
 function drawSVGChart(records,metric,color){
-  var data=[];records.forEach(function(r){
+  var data=[],recs=[];records.forEach(function(r){
     var v=metric==='height'?r.height:r.weight;
-    if(v!=null)data.push({x:r.ageInDays,y:v});
+    if(v!=null){data.push({x:r.ageInDays,y:v});recs.push(r);}
   });
   if(data.length<1)return'<p style="text-align:center;color:#BCAAA4">暂无数据</p>';
 
@@ -1807,8 +1812,13 @@ function drawSVGChart(records,metric,color){
   svg+='<path d="'+dPath+'" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
   
   // Data dots
-  data.forEach(function(d){
-    svg+='<circle cx="'+toSVGX(d.x,0,maxAge,pl,pw)+'" cy="'+toSVGY(d.y,yMin,yMax,pt,ph)+'" r="4.5" fill="#fff" stroke="'+color+'" stroke-width="2"/>';
+  data.forEach(function(d,i){
+    var unit=metric==='height'?'cm':'kg',name=metric==='height'?'身高':'体重';
+    var prevV=i>0?data[i-1].y:null;
+    var tip=name+' '+d.y+unit+' · 第'+Math.round(d.x/30.4375)+'个月';
+    if(recs[i])tip+=' · '+U.fmtShort(recs[i].date);
+    if(prevV!=null)tip+=' · '+(d.y-prevV>=0?'+':'')+(d.y-prevV).toFixed(1)+unit+' 较上次';
+    svg+='<circle cx="'+toSVGX(d.x,0,maxAge,pl,pw)+'" cy="'+toSVGY(d.y,yMin,yMax,pt,ph)+'" r="4.5" fill="#fff" stroke="'+color+'" stroke-width="2"><title>'+tip.replace(/</g,'&lt;')+'</title></circle>';
   });
   
   // Grid + axes
@@ -1823,7 +1833,7 @@ function drawSVGChart(records,metric,color){
   for(var dx=0;dx<=maxAge;dx+=step){
     var gx=toSVGX(dx,0,maxAge,pl,pw);
     svg+='<line x1="'+gx+'" y1="'+(pt+ph)+'" x2="'+gx+'" y2="'+(pt+ph+4)+'" stroke="#BCAAA4" stroke-width="0.5"/>';
-    svg+='<text x="'+gx+'" y="'+(pt+ph+16)+'" text-anchor="middle" font-size="9" fill="#BCAAA4">'+dx+'天</text>';
+    svg+='<text x="'+gx+'" y="'+(pt+ph+16)+'" text-anchor="middle" font-size="9" fill="#BCAAA4">'+Math.round(dx/30)+'个月</text>';
   }
   
   svg+='<line x1="'+pl+'" y1="'+pt+'" x2="'+pl+'" y2="'+(pt+ph)+'" stroke="#BCAAA4" stroke-width="1"/>';
