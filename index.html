@@ -1724,12 +1724,12 @@ function renderGrowth(){
   var prev=records.length>1?records[records.length-2]:null;
 
   var html='<div class="growth-cards">';
-  var items=[{icon:'📏',label:'身高',v:latest?latest.height:null,u:'cm',color:'#FF8C69'},
-             {icon:'⚖️',label:'体重',v:latest?latest.weight:null,u:'kg',color:'#81C784'},
-             {icon:'📐',label:'头围',v:latest&&latest.headCircumference?latest.headCircumference:null,u:'cm',color:'#FFB6C1'}];
+  var items=[{icon:'📏',label:'身高',key:'height',v:latest?latest.height:null,u:'cm',color:'#FF8C69'},
+             {icon:'⚖️',label:'体重',key:'weight',v:latest?latest.weight:null,u:'kg',color:'#81C784'},
+             {icon:'📐',label:'头围',key:'head',v:latest&&latest.headCircumference?latest.headCircumference:null,u:'cm',color:'#FFB6C1'}];
   items.forEach(function(item){
-    var pct=item.v!=null?getPercentile(records,item.label.toLowerCase(),item.v):null;
-    var ds=prev&&item.v!=null?deltaS(latest,prev,item.label.toLowerCase()):'';
+    var pct=item.v!=null?getPercentile(records,item.key,item.v):null;
+    var ds=prev&&item.v!=null?deltaS(latest,prev,item.key):'';
     html+='<div class="gr-card" style="border-top:4px solid '+item.color+'">';
     html+='<div class="gr-card-top"><span class="gr-card-icon">'+item.icon+'</span><span class="gr-card-label">'+item.label+'</span></div>';
     html+='<div class="gr-card-val">'+(item.v!=null?item.v:'--')+'<span class="gr-card-unit">'+(item.v!=null?item.u:'')+'</span></div>';
@@ -1889,10 +1889,12 @@ function getPctColor(pct){
 
 function deltaS(latest,prev,metric){
   if(!latest||!prev)return'';
-  var cur=m=metric==='height'?latest.height:latest.weight;
-  var pr=m=metric==='height'?prev.height:prev.weight;
+  var cur,pr,u;
+  if(metric==='height'){cur=latest.height;pr=prev.height;u='cm';}
+  else if(metric==='weight'){cur=latest.weight;pr=prev.weight;u='kg';}
+  else {cur=latest.headCircumference;pr=prev.headCircumference;u='cm';}
   if(cur==null||pr==null)return'';
-  var d=cur-pr,u=metric==='height'?'cm':'kg';
+  var d=cur-pr;
   return(d>=0?'+':'')+d.toFixed(1)+u+' 较上次';
 }
 
