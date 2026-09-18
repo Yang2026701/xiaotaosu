@@ -11,10 +11,14 @@ CREATE TABLE IF NOT EXISTS app_config (
   birth_date  DATE NOT NULL DEFAULT '2026-07-16',
   birth_height REAL DEFAULT 50.0,
   birth_weight REAL DEFAULT 3.3,
+  sex         TEXT NOT NULL DEFAULT 'girl',      -- 宝宝性别: girl|boy（用于生长曲线参考，预留）
   ds_api_key  TEXT DEFAULT '',
   created_at  TIMESTAMPTZ DEFAULT now(),
   updated_at  TIMESTAMPTZ DEFAULT now()
 );
+
+-- 老库升级：若表已存在则补新增的 sex 列
+ALTER TABLE app_config ADD COLUMN IF NOT EXISTS sex TEXT NOT NULL DEFAULT 'girl';
 
 -- 初始配置（仅当不存在时插入）
 INSERT INTO app_config (id, passcode, baby_name, birth_date) VALUES (1, '123456', '小桃酥', '2026-07-16')

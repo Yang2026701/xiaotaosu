@@ -880,7 +880,7 @@ const WHO_GIRLS = [[0, 45.4,47.3,49.1,50.9,52.9, 2.4,2.8,3.2,3.6,4.2, 31.5,33.9,
 // ============================================================
 //  App State
 // ============================================================
-let appData = { settings: { babyName: CFG.DEFAULT_NAME, birthDate: CFG.DEFAULT_BIRTH, birthHeight: 50, birthWeight: 3.3, passcode: CFG.DEFAULT_PASSCODE }, photos: [], milestones: [], growthRecords: [], diaryEntries: [], healthRecords: [], parentingChecks: [], dailyLogs: [], milestoneGuesses: [] };
+let appData = { settings: { babyName: CFG.DEFAULT_NAME, birthDate: CFG.DEFAULT_BIRTH, birthHeight: 50, birthWeight: 3.3, sex: 'girl', passcode: CFG.DEFAULT_PASSCODE }, photos: [], milestones: [], growthRecords: [], diaryEntries: [], healthRecords: [], parentingChecks: [], dailyLogs: [], milestoneGuesses: [] };
 let activeTab = 'album';
 let isFirstRun = true;
 let heightChart = null, weightChart = null;
@@ -980,6 +980,7 @@ async function enterApp(config) {
   appData.settings.birthDate = config.birth_date || CFG.DEFAULT_BIRTH; appData.settings.dsApiKey = localStorage.getItem('xts_ds_key') || config.ds_api_key || '';
   appData.settings.birthHeight = config.birth_height || 50;
   appData.settings.birthWeight = config.birth_weight || 3.3;
+  appData.settings.sex = config.sex || 'girl';
   appData.settings.passcode = config.passcode;
 
   // Fade out lock screen
@@ -3978,7 +3979,8 @@ function localPolish(text){
 // ============================================================
 function renderSettings(){
   const s=appData.settings;
-  let html='<div class="ss"><h3>宝宝信息</h3><div class="sc">'+sr('名字',U.esc(s.babyName),'babyName')+sr('生日',U.fmtDate(s.birthDate),'birthDate')+sr('出生身高',s.birthHeight+' cm','birthHeight')+sr('出生体重',s.birthWeight+' kg','birthWeight')+'</div></div>';
+  const sexLabel = s.sex==='boy'?'男宝':'女宝';
+  let html='<div class="ss"><h3>宝宝信息</h3><div class="sc">'+sr('名字',U.esc(s.babyName),'babyName')+sr('生日',U.fmtDate(s.birthDate),'birthDate')+sr('性别',sexLabel,'sex')+sr('出生身高',s.birthHeight+' cm','birthHeight')+sr('出生体重',s.birthWeight+' kg','birthWeight')+'</div></div>';
   html+='<div class="ss"><h3>安全设置</h3><div class="sc">'+sr('访问密码','••••••','passcode')+sr('DeepSeek API',appData.settings.dsApiKey?'••••••'+appData.settings.dsApiKey.slice(-4):'未设置','dsApiKey')+'</div></div>';
   html+='<div class="ss"><h3>关于</h3><div class="sc"><div class="sr"><span class="sr-label">存储方式</span><span class="sr-val">Supabase 云端</span></div><div class="sr"><span class="sr-label">数据互通</span><span class="sr-val">手机·电脑·iPad</span></div></div></div>';
   html+='<div style="text-align:center;margin:32px 0;color:#BCAAA4;font-size:12px">🍑 小桃酥的成长记录 · 云端版</div>';
@@ -3990,9 +3992,10 @@ function renderSettings(){
 function sr(label,value,field){return'<div class="sr"><span class="sr-label">'+label+'</span><span class="sr-val">'+value+'</span><button class="sr-act btn-edit-set" data-field="'+field+'">编辑</button></div>';}
 
 function editSetting(field){
-  const s=appData.settings,labels={babyName:'宝宝名字',birthDate:'生日',birthHeight:'出生身高(cm)',birthWeight:'出生体重(kg)',passcode:'访问密码'};
+  const s=appData.settings,labels={babyName:'宝宝名字',birthDate:'生日',sex:'宝宝性别',birthHeight:'出生身高(cm)',birthWeight:'出生体重(kg)',passcode:'访问密码'};
   let input;
-  if(field==='birthDate')input='<input type="date" class="fi" id="sv" value="'+s.birthDate+'" max="'+U.today()+'">';
+  if(field==='sex')input='<select class="fi" id="sv"><option value="girl"'+(s.sex==='girl'?' selected':'')+'>女宝</option><option value="boy"'+(s.sex==='boy'?' selected':'')+'>男宝</option></select>';
+  else if(field==='birthDate')input='<input type="date" class="fi" id="sv" value="'+s.birthDate+'" max="'+U.today()+'">';
   else if(field==='dsApiKey'){input='<input type="text" class="fi" id="sv" value="'+s.dsApiKey+'" placeholder="sk-..."><div class="fl" style="margin-top:8px;color:#BCAAA4">在 <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color:#FF8C69">platform.deepseek.com</a> 免费获取，新用户送500万tokens</div>';} else if(field==='passcode')input='<input type="text" class="fi" id="sv" value="'+s.passcode+'" maxlength="20"><div class="fl" style="margin-top:8px;color:#BCAAA4">修改后需用新密码重新登录</div>';
   else input='<input type="'+(field==='babyName'?'text':'number')+'" class="fi" id="sv" value="'+(field==='babyName'?s.babyName:s[field])+'" '+(field!=='babyName'?'step="0.1"':'')+'>';
 
@@ -4001,7 +4004,7 @@ function editSetting(field){
     try{
       const u={};u[field==='babyName'?'baby_name':field==='birthDate'?'birth_date':field==='birthHeight'?'birth_height':field==='birthWeight'?'birth_weight':field==='passcode'?'passcode':field==='dsApiKey'?'ds_api_key':field]=field==='birthHeight'||field==='birthWeight'?parseFloat(val):val;
       await API.updateConfig(u);
-      if(field==='babyName'){s.babyName=val;updateTitle();}else if(field==='birthDate')s.birthDate=val;else if(field==='birthHeight')s.birthHeight=parseFloat(val);else if(field==='birthWeight')s.birthWeight=parseFloat(val);else if(field==='dsApiKey'){s.dsApiKey=val;setDSKey(val);} else if(field==='passcode'){s.passcode=val;sessionStorage.setItem('xts_pass',val);}
+      if(field==='babyName'){s.babyName=val;updateTitle();}else if(field==='birthDate')s.birthDate=val;else if(field==='sex')s.sex=val;else if(field==='birthHeight')s.birthHeight=parseFloat(val);else if(field==='birthWeight')s.birthWeight=parseFloat(val);else if(field==='dsApiKey'){s.dsApiKey=val;setDSKey(val);} else if(field==='passcode'){s.passcode=val;sessionStorage.setItem('xts_pass',val);}
       updateAge();toast('已更新','ok');return true;
     }catch(e){toast('更新失败: '+e.message,'err');return false;}
   });
