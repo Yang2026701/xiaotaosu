@@ -901,11 +901,44 @@ function applyTheme(t){
   el.textContent=':root{--acc1:'+th.acc1+';--acc2:'+th.acc2+';--acc-rgb:'+th.rgb+';}';
   localStorage.setItem('xts_theme',t);
 }
+// ==== 宝宝卡通头像 ====
+// 内置卡通宝宝脸（SVG data URI），外圈跟随当前主题色
+function babyAvatarSvg(){
+  const th=XTS_THEMES[xtsTheme]||XTS_THEMES.peach;
+  const s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">'
+   +'<rect width="120" height="120" fill="#FFF7F0"/>'
+   +'<circle cx="60" cy="60" r="58" fill="'+th.acc1+'"/>'
+   +'<circle cx="60" cy="60" r="49" fill="#FFF7EF"/>'
+   +'<ellipse cx="60" cy="66" rx="35" ry="34" fill="#FFE6D4"/>'
+   +'<circle cx="26" cy="68" r="6" fill="#FFE6D4"/>'
+   +'<circle cx="94" cy="68" r="6" fill="#FFE6D4"/>'
+   +'<path d="M45 34 Q47 21 60 29 Q69 19 76 35" stroke="#A1887F" stroke-width="5.5" fill="none" stroke-linecap="round"/>'
+   +'<path d="M49 24 Q45 18 51 15" stroke="#A1887F" stroke-width="5.5" fill="none" stroke-linecap="round"/>'
+   +'<ellipse cx="46" cy="62" rx="4.8" ry="6.8" fill="#5D4037"/>'
+   +'<ellipse cx="74" cy="62" rx="4.8" ry="6.8" fill="#5D4037"/>'
+   +'<circle cx="48" cy="58" r="1.8" fill="#fff"/>'
+   +'<circle cx="76" cy="58" r="1.8" fill="#fff"/>'
+   +'<ellipse cx="38" cy="72" rx="6.5" ry="4" fill="#FF9E80" opacity=".5"/>'
+   +'<ellipse cx="82" cy="72" rx="6.5" ry="4" fill="#FF9E80" opacity=".5"/>'
+   +'<path d="M53 75 Q60 84 67 75" stroke="#7A4A2C" stroke-width="3.4" fill="none" stroke-linecap="round"/>'
+   +'<path d="M60,37 L61.76,41.57 L66.66,41.84 L62.85,44.93 L64.11,49.66 L60,47 L55.89,49.66 L57.15,44.93 L53.34,41.84 L58.24,41.57 Z" fill="'+th.acc2+'"/>'
+   +'</svg>';
+  return 'data:image/svg+xml;utf8,'+encodeURIComponent(s);
+}
+function babyAvatar(){
+  return '<img class="baby-av" src="'+babyAvatarSvg()+'" alt="宝宝">';
+}
+// 锁定页 + 欢迎页的大头像
+function refreshEntryIcons(){
+  const lk=document.querySelector('.lock-icon');if(lk)lk.innerHTML=babyAvatar();
+  const wc=document.querySelector('.w-icon');if(wc)wc.innerHTML=babyAvatar();
+}
+applyTheme(xtsTheme);refreshEntryIcons();
 function updateAvatar(){
   const el=document.querySelector('#bar .bar-logo');if(!el)return;
   const av=localStorage.getItem('xts_avatar')||'';
   if(av){el.innerHTML='<img src="'+av+'" alt="宝宝头像">';el.style.animation='none';}
-  else{el.innerHTML='🍑';el.style.animation='';}
+  else{el.innerHTML=babyAvatar();el.style.animation='';}
 }
 function showAvatarPicker(){
   const photos=appData.photos||[];
@@ -916,7 +949,7 @@ function showAvatarPicker(){
   if(recent.length===0)html+='<div style="grid-column:1/-1;color:#BCAAA4;font-size:.8rem;text-align:center;padding:12px 0">还没有照片，先去昵相册添加一张吧~</div>';
   recent.forEach(p=>{const u=p.thumbnailDataUrl||p.dataUrl;if(!u)return;html+='<img src="'+u+'" class="av-opt" data-u="'+u+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;cursor:pointer;border:2.5px solid '+(u===cur?'var(--acc1)':'transparent')+'">';});
   html+='</div><div style="font-size:.75rem;color:#A09085;margin-bottom:12px">💡 从最近的照片里选一张当头像</div>';
-  html+='<button class="btn btn-s btn-block" id="av-default">🍑 恢复默认</button>';
+  html+='<button class="btn btn-s btn-block" id="av-default">恢复默认</button>';
   showModal('选择宝宝头像',html,()=>{
     if(chosen)localStorage.setItem('xts_avatar',chosen);
     else localStorage.removeItem('xts_avatar');
@@ -925,7 +958,7 @@ function showAvatarPicker(){
   },()=>{
     $$('.av-opt').forEach(im=>{im.addEventListener('click',()=>{$$('.av-opt').forEach(x=>x.style.borderColor='transparent');im.style.borderColor='var(--acc1)';chosen=im.dataset.u;});});
     const dd=document.getElementById('av-default');
-    if(dd)dd.addEventListener('click',()=>{chosen='';$$('.av-opt').forEach(x=>x.style.borderColor='transparent');toast('已使用默认头像','ok');});
+    if(dd)dd.addEventListener('click',()=>{chosen='';$$('.av-opt').forEach(x=>x.style.borderColor='transparent');const ap=$('#av-prev');if(ap)ap.innerHTML=babyAvatar();toast('已使用默认头像','ok');});
   });
 }
 let isFirstRun = true;
@@ -4225,7 +4258,7 @@ function renderSettings(){
   const sexLabel = s.sex==='boy'?'男宝':'女宝';
   let html='<div class="ss"><h3>宝宝信息</h3><div class="sc">'+sr('名字',U.esc(s.babyName),'babyName')+sr('生日',U.fmtDate(s.birthDate),'birthDate')+sr('性别',sexLabel,'sex')+sr('出生身高',s.birthHeight+' cm','birthHeight')+sr('出生体重',s.birthWeight+' kg','birthWeight')+'</div></div>';
   html+='<div class="ss"><h3>安全设置</h3><div class="sc">'+sr('访问密码','••••••','passcode')+sr('DeepSeek API',appData.settings.dsApiKey?'••••••'+appData.settings.dsApiKey.slice(-4):'未设置','dsApiKey')+'</div></div>';
-  html+='<div class="ss"><h3>外观</h3><div class="sc"><div class="sr"><span class="sr-label">宝宝头像</span><span class="av-prev" id="av-prev">'+(localStorage.getItem('xts_avatar')?'':'🍑')+'</span><button class="sr-act" id="btn-av">更换</button></div><div class="sr"><span class="sr-label">主题色</span><span class="sr-val" id="theme-label"></span></div></div></div>';
+  html+='<div class="ss"><h3>外观</h3><div class="sc"><div class="sr"><span class="sr-label">宝宝头像</span><span class="av-prev" id="av-prev">'+(localStorage.getItem('xts_avatar')?'':babyAvatar())+'</span><button class="sr-act" id="btn-av">更换</button></div><div class="sr"><span class="sr-label">主题色</span><span class="sr-val" id="theme-label"></span></div></div></div>';
   html+='<div style="display:flex;gap:10px;padding:8px 16px 20px" id="theme-chips"></div>';
   html+='<div class="ss"><h3>关于</h3><div class="sc"><div class="sr"><span class="sr-label">存储方式</span><span class="sr-val">Supabase 云端</span></div><div class="sr"><span class="sr-label">数据互通</span><span class="sr-val">手机·电脑·iPad</span></div></div></div>';
   html+='<div style="text-align:center;margin:32px 0;color:#BCAAA4;font-size:12px">🍑 小桃酥的成长记录 · 云端版</div>';
@@ -4237,7 +4270,7 @@ function renderSettings(){
   const tc=$('#theme-chips');if(tc){
     let thr='';Object.keys(XTS_THEMES).forEach(k=>{thr+='<span class="theme-chip" data-k="'+k+'" title="'+XTS_THEMES[k].label+'" style="background:linear-gradient(135deg,'+XTS_THEMES[k].acc1+','+XTS_THEMES[k].acc2+')"></span>';});
     tc.innerHTML=thr;
-    $$('#theme-chips .theme-chip').forEach(c=>{if(c.dataset.k===xtsTheme)c.classList.add('on');c.addEventListener('click',()=>{xtsTheme=c.dataset.k;applyTheme(xtsTheme);renderSettings();});});
+    $$('#theme-chips .theme-chip').forEach(c=>{if(c.dataset.k===xtsTheme)c.classList.add('on');c.addEventListener('click',()=>{xtsTheme=c.dataset.k;applyTheme(xtsTheme);updateAvatar();refreshEntryIcons();renderSettings();});});
   }
   const ap=$('#av-prev');if(ap&&localStorage.getItem('xts_avatar'))ap.innerHTML='<img src="'+localStorage.getItem('xts_avatar')+'">';
   const ba=$('#btn-av');if(ba&&ba.addEventListener)ba.addEventListener('click',showAvatarPicker);
@@ -4316,6 +4349,7 @@ function emptyState(icon,title,desc){return'<div class="empty"><div class="empty
 .theme-chip.on{box-shadow:0 0 0 2px var(--acc1)}
 .av-prev{width:36px;height:36px;border-radius:50%;background:#FFF0EB;display:inline-flex;align-items:center;justify-content:center;font-size:1.15rem;overflow:hidden}
 .av-prev img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.lock-icon img,.w-icon img{width:76px;height:76px;border-radius:50%;object-fit:cover;display:inline-block;vertical-align:middle;box-shadow:0 6px 18px rgba(var(--acc-rgb),.28)}
 
 /* Memorial page */
 .mem-hero{font-size:1.35rem;font-weight:700;color:#4E342E;text-align:center;padding:28px 0 4px}
